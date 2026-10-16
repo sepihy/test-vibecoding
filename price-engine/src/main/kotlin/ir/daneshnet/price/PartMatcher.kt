@@ -1,30 +1,26 @@
 package ir.daneshnet.price
 
-import kotlin.math.max
-
-data class MatchResult(val part: NormalizedPart, val score: Double, val reasons: List<String>)
+data class MatchResult(val part: NormalizedPart, val score: Double, val reasons: List<String>, val needsConfirmation: Boolean)
 
 object PartMatcher {
     fun match(query: PartQuery, catalog: List<NormalizedPart>): MatchResult? {
         if (catalog.isEmpty()) return null
-        val nq = PartNormalizer.normalizeText(query.raw)
-        return catalog.map { part ->
-            val fields = listOfNotNull(part.title, part.partName, part.brand, part.partNumber, part.make, part.model)
-                .map(PartNormalizer::normalizeText)
-            val tokenScore = tokenSimilarity(nq, fields.flatMap { it.split(" ") }.toSet())
-            val exactPartNumber = query.partNumber != null && part.partNumber != null &&
-                PartNormalizer.normalizeText(query.partNumber) == PartNormalizer.normalizeText(part.partNumber)
-            val score = if (exactPartNumber) 1.0 else tokenScore
-            MatchResult(part, score, buildList {
-                if (exactPartNumber) add("شماره فنی دقیق")
-                if (tokenScore >= .8) add("شباهت نام و مشخصات")
-            })
+        val q = PartNormalizer.normalizeText(query.raw)
+        return catalog.map { p ->
+            var score = tokenScore(q, p)
+            val reasons = mutableListOf<String>()
+            if (!query.partNumber.isNullOrBlank() && query.partNumber == p.partNumber) { score = 1.0; reasons += "شماره فنی دقیق" }
+            if (!query.brand.isNullOrBlank() && query.brand.equals(p.brand, true)) { score += .12; reasons += "برند منطبق" }
+            if (!query.model.isNullOrBlank() && PartNormalizer.normalizeText(query.model) == PartNormalizer.normalizeText(p.model ?: "")) { score += .10; reasons += "مدل خودرو منطبق" }
+            score = score.coerceIn(0.0, 1.0)
+            MatchResult(p, score, reasons, score < .90)
         }.maxByOrNull { it.score }
     }
 
-    private fun tokenSimilarity(query: String, tokens: Set<String>): Double {
-        val q = query.split(" ").filter { it.length > 1 }.toSet()
-        if (q.isEmpty()) return 0.0
-        return q.count { token -> tokens.any { t -> t == token || t.contains(token) || token.contains(t) } }.toDouble() / q.size
+    private fun tokenScore(q: String, p: NormalizedPart): Double {
+        val qt = q.split(" ").filter { it.length > 1 }.toSet()
+        val pt = (p.aliases + listOfNotNull(p.title,p.make,p.model,p.partName,p.brand,p.partNumber)).flatMap { PartNormalizer.normalizeText(it).split(" ") }.toSet()
+        if (qt.isEmpty()) return 0.0
+        return qt.count { t -> pt.any { x -> x == t || x.contains(t) || t.contains(x) } }.toDouble() / qt.size
     }
 }
