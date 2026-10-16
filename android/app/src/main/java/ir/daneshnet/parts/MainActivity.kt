@@ -97,7 +97,7 @@ fun AppHome() {
         }
     }
 
-    val mediaPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val mediaPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) processMedia(uri)
     }
     val tablePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -137,11 +137,11 @@ fun AppHome() {
             else "جستجوی «$query» ثبت شد؛ دریافت قیمت زنده هنوز به فید واقعی و قابل‌دسترسی منبع نیاز دارد. هیچ قیمت ساختگی نمایش داده نمی‌شود."
         }, modifier = Modifier.fillMaxWidth()) { Text("جستجوی قیمت روز") }
 
-        OutlinedButton(onClick = { mediaPicker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = { mediaPicker.launch("*/*") }, modifier = Modifier.fillMaxWidth()) {
             Text("افزودن PDF یا عکس")
         }
         OutlinedButton(onClick = {
-            tablePicker.launch(arrayOf("*/*"))
+            tablePicker.launch("*/*")
         }, modifier = Modifier.fillMaxWidth()) { Text("وارد کردن Excel / CSV") }
 
         if (selectedFile.isNotBlank()) {
