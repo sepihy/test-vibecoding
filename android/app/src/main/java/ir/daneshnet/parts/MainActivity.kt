@@ -46,6 +46,7 @@ fun AppHome() {
     var selectedFile by remember { mutableStateOf("") }
     var extractedText by remember { mutableStateOf("") }
     var fileWarnings by remember { mutableStateOf("") }
+    var pendingExportRows by remember { mutableStateOf<List<List<String>>>(emptyList()) }
 
     fun displayName(uri: Uri): String {
         var name: String? = null
@@ -122,6 +123,71 @@ fun AppHome() {
         }
     }
 
+    val pdfToExcelPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val name = displayName(uri)
+            selectedFile = name
+            busy = true
+            report = "در حال استخراج PDF و آماده‌سازی Excel..."
+            scope.launch {
+                try {
+                    val rows = withContext(Dispatchers.IO) {
+                        val pages = DocumentReader(context.contentResolver).pages(uri, 20)
+                        if (pages.isEmpty()) error("صفحه‌ای از PDF خوانده نشد.")
+                        val ocr = OcrEngine(context)
+                        try {
+                            val outputRows = mutableListOf<List<String>>()
+                            outputRows += listOf("صفحه", "ردیف", "متن استخراج‌شده")
+                            pages.forEachIndexed { pageIndex, bitmap ->
+                                try {
+                                    val text = ocr.read(bitmap)
+                                    text.lines().map { it.trim() }.filter { it.isNotBlank() }.forEachIndexed { lineIndex, line ->
+                                        // Keep original line intact. Also split obvious table delimiters into extra cells.
+                                        val cells = when {
+                                            line.contains("|") -> line.split("|").map { it.trim() }
+                                            line.contains("\\t") -> line.split("\\t").map { it.trim() }
+                                            Regex("\\s{2,}").containsMatchIn(line) -> Regex("\\s{2,}").split(line).map { it.trim() }
+                                            else -> listOf(line)
+                                        }
+                                        outputRows += listOf((pageIndex + 1).toString(), (lineIndex + 1).toString(), line) + cells
+                                    }
+                                } finally { bitmap.recycle() }
+                            }
+                            outputRows
+                        } finally { ocr.close() }
+                    }
+                    pendingExportRows = rows
+                    extractedText = rows.drop(1).take(120).joinToString("\\n") { it.drop(2).joinToString(" | ") }
+                    fileWarnings = "خروجی Excel شامل متن OCR و ستون‌های احتمالی جدول است. متن اصلی هر خط حفظ می‌شود؛ قیمت‌ها و ستون‌ها را با PDF تطبیق بده."
+                    report = "استخراج تمام شد: ${(rows.size - 1).coerceAtLeast(0)} خط. اکنون محل ذخیره فایل Excel را انتخاب کن."
+                    saveXlsxLauncher.launch((name.substringBeforeLast('.', name).ifBlank { "pdf-export" } + ".xlsx"))
+                } catch (e: Exception) {
+                    report = "تبدیل PDF ناموفق بود: ${e.message ?: e.javaClass.simpleName}"
+                } finally { busy = false }
+            }
+        }
+    }
+
+    val saveXlsxLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ) { uri ->
+        if (uri != null) {
+            val rows = pendingExportRows
+            busy = true
+            report = "در حال ذخیره فایل Excel..."
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) { PdfExcelExporter(context.contentResolver).write(uri, rows) }
+                    report = "فایل Excel ذخیره شد. لطفاً نام قطعه، شماره فنی و قیمت‌ها را با PDF اصلی بررسی کن."
+                } catch (e: Exception) {
+                    report = "ذخیره Excel ناموفق بود: ${e.message ?: e.javaClass.simpleName}"
+                } finally { busy = false }
+            }
+        } else {
+            report = "ذخیره فایل لغو شد؛ برای خروجی گرفتن، تبدیل PDF به Excel را دوباره اجرا کن."
+        }
+    }
+
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -143,6 +209,10 @@ fun AppHome() {
         OutlinedButton(onClick = {
             tablePicker.launch("*/*")
         }, modifier = Modifier.fillMaxWidth()) { Text("وارد کردن Excel / CSV") }
+
+        OutlinedButton(enabled = !busy, onClick = { pdfToExcelPicker.launch("application/pdf") }, modifier = Modifier.fillMaxWidth()) {
+            Text("تبدیل PDF به Excel")
+        }
 
         if (selectedFile.isNotBlank()) {
             Text("فایل: $selectedFile", style = MaterialTheme.typography.titleSmall)
