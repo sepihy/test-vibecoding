@@ -35,8 +35,15 @@ class PublicPageSourceAdapter(
     .replace(Regex("(?is)<[^>]+>")," ").replace("&nbsp;"," ").replace("&amp;","&")
     .replace("&quot;","\"").replace("&#x27;","'").replace("&lt;","<").replace("&gt;",">")
     .replace(Regex("\\s+")," ").trim()
-   val price=Regex("(?i).{0,80}(?:قیمت|تومان|ریال|لنت|دیسک|کلاچ|تسمه|فیلتر|قطعه).{0,100}\\d[\\d,۰-۹. ]{3,}.{0,60}")
-   val lines=price.findAll(plain).map{it.value.trim()}.distinct().take(50).toList()
+   // Only accept an explicit price label immediately before an amount, or an amount followed by a currency.
+   // Do not classify product names or phone numbers as prices merely because they mention a part.
+   val labelledPrice=Regex("(?i)(?:قیمت|فی(?:\\s+فروش)?|نرخ)\\s*[:：\\-]?\\s*([0-9۰-۹][0-9۰-۹,٬.]{3,})(?:\\s*(تومان|ریال))?")
+   val currencyPrice=Regex("([0-9۰-۹]{1,3}(?:[,٬][0-9۰-۹]{3})+|[0-9۰-۹]{5,})\\s*(تومان|ریال)")
+   val lines=(labelledPrice.findAll(plain).map { m ->
+     plain.substring((m.range.first-70).coerceAtLeast(0), (m.range.last+50).coerceAtMost(plain.length)).trim()
+   } + currencyPrice.findAll(plain).map { m ->
+     plain.substring((m.range.first-70).coerceAtLeast(0), (m.range.last+50).coerceAtMost(plain.length)).trim()
+   }).distinct().take(30).toList()
    val state=when{code !in 200..299->PublicSourceState.BLOCKED_OR_UNAVAILABLE;lines.isNotEmpty()->PublicSourceState.CONTENT_CANDIDATES_FOUND;else->PublicSourceState.PAGE_ONLY}
    val note=when(state){
     PublicSourceState.CONTENT_CANDIDATES_FOUND->"صفحه عمومی دریافت شد و متن‌های احتمالی قیمت پیدا شد؛ هنوز پست کامل و قیمت معتبر بودنشان تأیید نشده."
