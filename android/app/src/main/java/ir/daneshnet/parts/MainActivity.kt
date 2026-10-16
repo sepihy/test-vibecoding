@@ -1,6 +1,5 @@
 package ir.daneshnet.parts
 
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -78,7 +77,7 @@ fun PartsPriceApp(onPickDocument: (( (String) -> Unit) -> Unit)) {
                 when(tab) {
                     0 -> SearchScreen(query, { query=it }, searched, { searched=true }, extracted, pad)
                     1 -> SourcesScreen(link, {link=it}, pad)
-                    else -> DocumentsScreen(extracted, { onPickDocument(it) }, pad)
+                    else -> DocumentsScreen(extracted, { onPickDocument { text -> extracted = text } }, pad)
                 }
             }
         }
@@ -88,7 +87,7 @@ fun PartsPriceApp(onPickDocument: (( (String) -> Unit) -> Unit)) {
 @Composable
 private fun SearchScreen(query:String,onQuery:(String)->Unit,searched:Boolean,onSearch:()->Unit,extracted:String,pad:PaddingValues){
     LazyColumn(Modifier.padding(pad).fillMaxSize().padding(18.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
-        item{Spacer(Modifier.height(10.dp));Text("دستیار قیمت لوازم یدکی",25.spEm(),fontWeight=FontWeight.Bold,color=Navy);Text("قیمت روز را از منابع متصل بررسی کن",color=Color.Gray)}
+        item{Spacer(Modifier.height(10.dp));Text("دستیار قیمت لوازم یدکی", fontSize=25.sp, fontWeight=FontWeight.Bold, color=Navy);Text("قیمت روز را از منابع متصل بررسی کن",color=Color.Gray)}
         item{OutlinedTextField(query,onQuery,Modifier.fillMaxWidth(),singleLine=true,label={Text("نام قطعه، خودرو یا شماره فنی")},placeholder={Text("مثلاً لنت جلو پژو ۲۰۶ تیپ ۵")})}
         item{Button(onClick=onSearch,enabled=query.isNotBlank(),Modifier.fillMaxWidth()){Text("جستجوی هوشمند قیمت")}}
         if(extracted.isNotBlank()) item{Card(Modifier.fillMaxWidth()){Column(Modifier.padding(14.dp)){Text("متن استخراج‌شده از سند",fontWeight=FontWeight.Bold);Text(extracted.take(2500))}}}
@@ -96,11 +95,11 @@ private fun SearchScreen(query:String,onQuery:(String)->Unit,searched:Boolean,on
     }
 }
 
-@Composable private fun DocumentsScreen(extracted:String,pick:((String)->Unit)->Unit,pad:PaddingValues){
+@Composable private fun DocumentsScreen(extracted:String,pick:()->Unit,pad:PaddingValues){
     Column(Modifier.padding(pad).fillMaxSize().padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
         Text("خواندن فایل و عکس",25.spEm(),fontWeight=FontWeight.Bold,color=Navy)
         Text("عکس یا PDF را انتخاب کن؛ چند صفحه اول PDF به متن تبدیل می‌شود.",color=Color.Gray)
-        Button(onClick={pick{extractedText -> }} ,Modifier.fillMaxWidth()){Text("انتخاب عکس / PDF")}
+        Button(onClick=pick ,Modifier.fillMaxWidth()){Text("انتخاب عکس / PDF")}
         if(extracted.isNotBlank())Card(Modifier.fillMaxWidth()){Text(extracted.take(4000),Modifier.padding(14.dp))}
     }
 }
@@ -114,4 +113,3 @@ private fun SearchScreen(query:String,onQuery:(String)->Unit,searched:Boolean,on
     }
 }
 
-private fun Int.spEm() = androidx.compose.ui.unit.TextUnit(this.toFloat(), androidx.compose.ui.unit.TextUnitType.Sp)
