@@ -89,7 +89,7 @@ fun AppHome() {
                     }
                 }
                 extractedText = output
-                fileWarnings = "توجه: OCR داخلی فعلی برای حروف لاتین و کدهای فنی مناسب است؛ خواندن متن فارسی از عکس/PDF قابل اتکا نیست و باید با اصل فایل یا متن استخراج‌شده مقایسه شود."
+                fileWarnings = "توجه: OCR خط عربی برای متن فارسی فعال است؛ با این حال ارقام، جدول‌ها و قیمت‌ها را با فایل اصلی تطبیق بده. متن استخراج‌شده قیمت تأییدشده نیست."
                 report = "پردازش اولیه فایل انجام شد. متن را بازبینی و در صورت نیاز اصلاح کن؛ این متن هنوز قیمت تأییدشده نیست."
             } catch (e: Exception) {
                 report = "خواندن فایل ناموفق بود: ${e.message ?: e.javaClass.simpleName}"
@@ -196,6 +196,6 @@ fun AppHome() {
         }
         if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         Card(modifier = Modifier.fillMaxWidth()) { Text(report, Modifier.padding(14.dp), fontSize = 14.sp) }
-        Text("OCR فعلی متن لاتین و کدهای فنی را می‌خواند؛ OCR فارسی هنوز تضمین‌شده نیست. اتصال مستقیم هم به دسترسی واقعی شبکه و محتوای عمومی هر سرویس وابسته است.", style = MaterialTheme.typography.bodySmall)
+        Text("OCR خط عربی برای خواندن فارسی فعال است؛ دقت آن به کیفیت اسکن و فونت PDF بستگی دارد و قیمت‌ها باید بازبینی شوند. اتصال مستقیم هم به دسترسی واقعی شبکه و محتوای عمومی هر سرویس وابسته است.", style = MaterialTheme.typography.bodySmall)
     }
 }
