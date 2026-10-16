@@ -1,0 +1,27 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'ir.daneshnet.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'ir.daneshnet.app'
+        minSdk 24
+        targetSdk 35
+        versionCode 10000
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        debug {
+            debuggable false
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
