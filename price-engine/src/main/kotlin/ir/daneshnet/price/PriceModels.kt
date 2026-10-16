@@ -16,6 +16,7 @@ data class NormalizedPart(
     val aliases: Set<String>,
     val make: String?,
     val model: String?,
+    val year: Int? = null,
     val partName: String?,
     val brand: String?,
     val partNumber: String?
@@ -32,8 +33,11 @@ data class PriceObservation(
     val matchScore: Double,
     val sellerScore: Double = 1.0,
     val url: String? = null,
-    val partKey: String? = null
+    val partKey: String? = null,
+    val availability: Availability = Availability.UNKNOWN
 )
+
+enum class Availability { IN_STOCK, OUT_OF_STOCK, UNKNOWN }
 
 data class MarketSnapshot(
     val part: NormalizedPart,
@@ -44,5 +48,8 @@ data class MarketSnapshot(
     val suggestedRetailRial: Long?,
     val sourceCount: Int,
     val confidence: Int,
+    val dataQuality: DataQuality,
     val observedAtEpochMs: Long
 )
+
+enum class DataQuality { STRONG, MODERATE, WEAK, INSUFFICIENT }
