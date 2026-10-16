@@ -53,7 +53,7 @@ class PublicPageSourceAdapter(
    }
    PublicSourceProbe(sourceName,sourceUrl,c.url?.toString(),code,title,desc,plain.take(12000),lines,note)
   }catch(e:Exception){
-   PublicSourceProbe(sourceName,sourceUrl,null,null,null,null,"",emptyList(),"اتصال ناموفق: ${e.javaClass.simpleName}. ممکن است سرویس یا شبکه این درخواست را نپذیرد.")
+   PublicSourceProbe(sourceName,sourceUrl,null,null,null,null,"",emptyList(),"اتصال ناموفق: ${e.javaClass.simpleName}: ${e.message ?: "بدون جزئیات"}. ممکن است DNS، فیلترینگ شبکه، TLS یا خود سرویس مانع دسترسی باشد؛ دکمه مرورگر را هم امتحان کن.")
   }finally{c?.disconnect()}
  }
  private fun meta(html:String,key:String):String?{
