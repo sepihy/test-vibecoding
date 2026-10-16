@@ -10,8 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ir.daneshnet.parts.sources.ChannelAccessState
-import ir.daneshnet.parts.sources.WhatsAppChannelAdapter
+import ir.daneshnet.parts.sources.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -19,46 +18,45 @@ import kotlinx.coroutines.withContext
 class MainActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{MaterialTheme{AppHome()}}}
 }
+private data class SourceTarget(val name:String,val url:String)
+private val targets=listOf(
+ SourceTarget("WhatsApp","https://whatsapp.com/channel/0029Vb3Xp1CInlqTzXlogg0h"),
+ SourceTarget("Telegram / MellatSt","https://t.me/MellatSt"),
+ SourceTarget("Rubika / saipayadakhojatiii","https://rubika.ir/saipayadakhojatiii")
+)
 @Composable fun AppHome(){
  var query by remember{mutableStateOf("")}
- var status by remember{mutableStateOf("هنوز اتصال آزمایش نشده است.")}
- var detail by remember{mutableStateOf("")}
  var busy by remember{mutableStateOf(false)}
+ var report by remember{mutableStateOf("هنوز منبعی آزمایش نشده است.")}
  val scope= rememberCoroutineScope()
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
   Text("قیمت‌یار قطعات",style=MaterialTheme.typography.headlineMedium)
-  Text("قیمت‌ها فقط پس از اعتبارسنجی منبع و تطبیق قطعه قابل استفاده‌اند.")
+  Text("قیمت فقط پس از تطبیق قطعه و اعتبارسنجی منبع قابل استفاده است.")
   OutlinedTextField(query,{query=it},Modifier.fillMaxWidth(),label={Text("نام قطعه یا شماره فنی")})
-  Button(onClick={},Modifier.fillMaxWidth()){Text("جستجوی قیمت روز")}
-  OutlinedButton(onClick={},Modifier.fillMaxWidth()){Text("افزودن عکس یا PDF")}
-  OutlinedButton(onClick={},Modifier.fillMaxWidth()){Text("وارد کردن Excel / CSV")}
+  Button(onClick={},modifier=Modifier.fillMaxWidth()){Text("جستجوی قیمت روز")}
+  OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("افزودن عکس یا PDF")}
+  OutlinedButton(onClick={},modifier=Modifier.fillMaxWidth()){Text("وارد کردن Excel / CSV")}
   HorizontalDivider()
-  Text("اتصال مستقیم واتساپ",style=MaterialTheme.typography.titleLarge)
-  Text("https://whatsapp.com/channel/0029Vb3Xp1CInlqTzXlogg0h",fontSize=12.sp)
-  Button(enabled=!busy,onClick={
-   busy=true;status="در حال بررسی دسترسی عمومی...";detail=""
-   scope.launch{
-    val result=withContext(Dispatchers.IO){WhatsAppChannelAdapter().probe()}
-    status=when(result.state){
-     ChannelAccessState.PUBLIC_CONTENT_FOUND->"صفحه عمومی باز شد؛ خطوط احتمالی قیمت پیدا شد"
-     ChannelAccessState.PUBLIC_PAGE_ONLY->"صفحه باز شد، اما پست‌های قابل استخراج در HTML عمومی پیدا نشدند"
-     ChannelAccessState.BLOCKED_OR_UNAVAILABLE->"دسترسی عمومی از این محیط ناموفق بود"
-     ChannelAccessState.INVALID_RESPONSE->"پاسخ نامعتبر"
+  Text("آزمایش اتصال مستقیم منابع",style=MaterialTheme.typography.titleLarge)
+  Text("هر دکمه فقط صفحه عمومی را بررسی می‌کند؛ پیدا شدن صفحه به معنی دسترسی به همه پست‌ها نیست.")
+  targets.forEach{target->
+   OutlinedButton(enabled=!busy,onClick={
+    busy=true;report="در حال بررسی ${target.name} ..."
+    scope.launch{
+     val r=withContext(Dispatchers.IO){PublicPageSourceAdapter(target.name,target.url).probe()}
+     report=buildString{
+      appendLine("منبع: ${r.sourceName}");appendLine("وضعیت HTTP: ${r.httpCode ?: "نامشخص"}")
+      appendLine("آدرس نهایی: ${r.finalUrl ?: "نامشخص"}")
+      r.title?.let{appendLine("عنوان: $it")};r.description?.let{appendLine("توضیح: $it")}
+      appendLine(r.note)
+      if(r.candidatePriceLines.isNotEmpty()){appendLine("متن‌های کاندیدا (تأییدنشده):");r.candidatePriceLines.take(8).forEach{appendLine("• $it")}}
+     }
+     busy=false
     }
-    detail=buildString{
-     appendLine(result.note);appendLine("HTTP: ${result.httpCode ?: "نامشخص"}")
-     result.title?.let{appendLine("عنوان: $it")}
-     result.description?.let{appendLine("توضیح: $it")}
-     if(result.candidatePriceLines.isNotEmpty()){appendLine("خطوط کاندیدا (نیازمند بررسی):");result.candidatePriceLines.take(10).forEach{appendLine("• $it")}}
-    }
-    busy=false
-   }
-  },modifier=Modifier.fillMaxWidth()){Text(if(busy)"در حال بررسی..." else "آزمایش اتصال مستقیم")}
-  Text(status,style=MaterialTheme.typography.titleMedium)
-  if(detail.isNotBlank())Card(Modifier.fillMaxWidth()){Text(detail,Modifier.padding(14.dp))}
-  Text("این آزمایش فقط صفحه عمومی را می‌خواند؛ ورود، دورزدن محدودیت یا استخراج محتوای غیرقابل‌دسترسی انجام نمی‌شود.",style=MaterialTheme.typography.bodySmall)
-  HorizontalDivider()
-  Text("منابع هدف",style=MaterialTheme.typography.titleMedium)
-  Text("Telegram • Rubika • WhatsApp • سایت‌ها • فایل‌های تأمین‌کننده")
+   },modifier=Modifier.fillMaxWidth()){Text(if(busy)"در حال آزمایش..." else "آزمایش اتصال ${target.name}")}
+  }
+  if(busy)LinearProgressIndicator(Modifier.fillMaxWidth())
+  Card(Modifier.fillMaxWidth()){Text(report,Modifier.padding(14.dp),fontSize=14.sp)}
+  Text("اگر فقط صفحه معرفی نمایش داده شود، برای پست‌های واقعی به مسیر عمومی/رسمی دیگری نیاز داریم. این آزمایش ورود حساب یا دورزدن محدودیت انجام نمی‌دهد.",style=MaterialTheme.typography.bodySmall)
  }
 }
