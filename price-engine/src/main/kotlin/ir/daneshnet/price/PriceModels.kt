@@ -1,43 +1,33 @@
 package ir.daneshnet.price
 
-data class PartQuery(
-    val raw: String,
-    val make: String? = null,
-    val model: String? = null,
-    val year: Int? = null,
-    val partName: String? = null,
-    val brand: String? = null,
-    val partNumber: String? = null
-)
+enum class SourceType { OFFICIAL, DISTRIBUTOR, RETAILER, USER_SUPPLIER, PUBLIC_MESSAGE }
+enum class Availability { IN_STOCK, OUT_OF_STOCK, UNKNOWN }
+enum class DataQuality { INSUFFICIENT, WEAK, MODERATE, STRONG }
 
 data class NormalizedPart(
     val canonicalKey: String,
-    val title: String,
+    val displayName: String,
     val aliases: Set<String>,
-    val make: String?,
-    val model: String?,
-    val year: Int? = null,
-    val partName: String?,
+    val make: String,
+    val model: String,
+    val trim: String?,
+    val partName: String,
+    val partNumber: String?,
     val brand: String?,
-    val partNumber: String?
+    val position: String?
 )
 
-enum class SourceType { OFFICIAL, RETAILER, DISTRIBUTOR, USER_SUPPLIER, PUBLIC_MESSAGE }
-
 data class PriceObservation(
+    val id: String,
     val sourceId: String,
-    val sourceName: String,
     val sourceType: SourceType,
     val priceRial: Long,
     val observedAtEpochMs: Long,
     val matchScore: Double,
-    val sellerScore: Double = 1.0,
-    val url: String? = null,
-    val partKey: String? = null,
-    val availability: Availability = Availability.UNKNOWN
+    val sellerScore: Double,
+    val availability: Availability = Availability.UNKNOWN,
+    val partKey: String
 )
-
-enum class Availability { IN_STOCK, OUT_OF_STOCK, UNKNOWN }
 
 data class MarketSnapshot(
     val part: NormalizedPart,
@@ -45,11 +35,9 @@ data class MarketSnapshot(
     val lowRial: Long?,
     val medianRial: Long?,
     val highRial: Long?,
-    val suggestedRetailRial: Long?,
+    val suggestedSaleRial: Long?,
     val sourceCount: Int,
     val confidence: Int,
     val dataQuality: DataQuality,
-    val observedAtEpochMs: Long
+    val latestObservedAtEpochMs: Long
 )
-
-enum class DataQuality { STRONG, MODERATE, WEAK, INSUFFICIENT }
