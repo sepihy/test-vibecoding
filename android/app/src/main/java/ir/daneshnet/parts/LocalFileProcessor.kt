@@ -47,7 +47,7 @@ class LocalFileProcessor(private val resolver: ContentResolver) {
 
     private fun parseDelimited(text: String): List<List<String>> {
         val first = text.lineSequence().firstOrNull().orEmpty()
-        val delimiter = listOf(',', ';', '\\t', '|').maxByOrNull { d -> first.count { it == d } } ?: ','
+        val delimiter = listOf(',', ';', '\t', '|').maxByOrNull { d -> first.count { it == d } } ?: ','
         val rows = mutableListOf<List<String>>()
         var row = mutableListOf<String>(); val cell = StringBuilder(); var quoted = false; var i = 0
         while (i < text.length) {
@@ -56,8 +56,8 @@ class LocalFileProcessor(private val resolver: ContentResolver) {
                 ch == '"' && quoted && i + 1 < text.length && text[i + 1] == '"' -> { cell.append('"'); i++ }
                 ch == '"' -> quoted = !quoted
                 ch == delimiter && !quoted -> { row.add(cell.toString().trim()); cell.setLength(0) }
-                (ch == '\\n' || ch == '\\r') && !quoted -> {
-                    if (ch == '\\r' && i + 1 < text.length && text[i + 1] == '\\n') i++
+                (ch == '\n' || ch == '\r') && !quoted -> {
+                    if (ch == '\r' && i + 1 < text.length && text[i + 1] == '\n') i++
                     row.add(cell.toString().trim()); cell.setLength(0)
                     if (row.any { it.isNotBlank() }) rows.add(row)
                     row = mutableListOf()
