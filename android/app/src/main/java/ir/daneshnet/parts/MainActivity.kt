@@ -152,34 +152,46 @@ fun AppHome() {
             scope.launch {
                 try {
                     val rows = withContext(Dispatchers.IO) {
-                        val pages = DocumentReader(context.contentResolver).pages(uri, 5)
-                        if (pages.isEmpty()) error("صفحه‌ای از PDF خوانده نشد.")
-                        val ocr = OcrEngine(context)
-                        try {
-                            val outputRows = mutableListOf<List<String>>()
-                            outputRows += listOf("صفحه", "ردیف", "متن استخراج‌شده")
-                            pages.forEachIndexed { pageIndex, bitmap ->
-                                try {
-                                    val text = ocr.read(bitmap)
-                                    text.lines().map { it.trim() }.filter { it.isNotBlank() }.forEachIndexed { lineIndex, line ->
-                                        // Keep original line intact. Also split obvious table delimiters into extra cells.
-                                        val cells = when {
-                                            line.contains("|") -> line.split("|").map { it.trim() }
-                                            line.contains("\t") -> line.split("\t").map { it.trim() }
-                                            Regex("\\s{2,}").containsMatchIn(line) -> Regex("\\s{2,}").split(line).map { it.trim() }
-                                            else -> listOf(line)
-                                        }
-                                        outputRows += listOf((pageIndex + 1).toString(), (lineIndex + 1).toString(), line) + cells
-                                    }
-                                } finally { bitmap.recycle() }
+                        val directText = runCatching { PdfTextReader(context).read(uri, 20) }.getOrDefault("")
+                        val outputRows = mutableListOf<List<String>>()
+                        outputRows += listOf("صفحه", "ردیف", "متن استخراج‌شده")
+                        if (directText.isNotBlank()) {
+                            directText.lines().map { it.trim() }.filter { it.isNotBlank() }.forEachIndexed { lineIndex, line ->
+                                val cells = when {
+                                    line.contains("|") -> line.split("|").map { it.trim() }
+                                    line.contains("\\t") -> line.split("\\t").map { it.trim() }
+                                    Regex("\\s{2,}").containsMatchIn(line) -> Regex("\\s{2,}").split(line).map { it.trim() }
+                                    else -> listOf(line)
+                                }
+                                outputRows += listOf("PDF", (lineIndex + 1).toString(), line) + cells
                             }
-                            outputRows
-                        } finally { ocr.close() }
+                        } else {
+                            val pages = DocumentReader(context.contentResolver).pages(uri, 5)
+                            if (pages.isEmpty()) error("صفحه‌ای از PDF خوانده نشد.")
+                            val ocr = OcrEngine(context)
+                            try {
+                                pages.forEachIndexed { pageIndex, bitmap ->
+                                    try {
+                                        val text = ocr.read(bitmap)
+                                        text.lines().map { it.trim() }.filter { it.isNotBlank() }.forEachIndexed { lineIndex, line ->
+                                            val cells = when {
+                                                line.contains("|") -> line.split("|").map { it.trim() }
+                                                line.contains("\\t") -> line.split("\\t").map { it.trim() }
+                                                Regex("\\s{2,}").containsMatchIn(line) -> Regex("\\s{2,}").split(line).map { it.trim() }
+                                                else -> listOf(line)
+                                            }
+                                            outputRows += listOf((pageIndex + 1).toString(), (lineIndex + 1).toString(), line) + cells
+                                        }
+                                    } finally { bitmap.recycle() }
+                                }
+                            } finally { ocr.close() }
+                        }
+                        outputRows
                     }
                     pendingExportRows = rows
                     extractedText = rows.drop(1).take(120).joinToString("\n") { it.drop(2).joinToString(" | ") }
-                    fileWarnings = "خروجی Excel شامل متن OCR و ستون‌های احتمالی جدول است. فقط ۵ صفحه اول پردازش شده؛ متن اصلی هر خط حفظ می‌شود و قیمت‌ها باید با PDF تطبیق داده شوند."
-                    report = "استخراج ۵ صفحه اول انجام شد: ${(rows.size - 1).coerceAtLeast(0)} خط. اکنون محل ذخیره فایل Excel را انتخاب کن."
+                    fileWarnings = "اگر PDF متن قابل انتخاب داشته باشد، متن مستقیم استخراج می‌شود؛ اگر اسکن باشد، فقط OCR لاتین روی ۵ صفحه اول اجرا می‌شود و برای فارسی قابل اتکا نیست. قیمت‌ها را با PDF اصلی تطبیق بده."
+                    report = "استخراج انجام شد: ${(rows.size - 1).coerceAtLeast(0)} خط. اکنون محل ذخیره فایل Excel را انتخاب کن."
                     saveXlsxLauncher.launch((name.substringBeforeLast('.', name).ifBlank { "pdf-export" } + ".xlsx"))
                 } catch (e: Exception) {
                     report = "تبدیل PDF ناموفق بود: ${e.message ?: e.javaClass.simpleName}"
