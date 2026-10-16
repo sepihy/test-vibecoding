@@ -53,7 +53,7 @@ class MainActivity:ComponentActivity(){
     }
     busy=false
    }
-  },Modifier.fillMaxWidth()){Text(if(busy)"در حال بررسی..." else "آزمایش اتصال مستقیم")}
+  },modifier=Modifier.fillMaxWidth()){Text(if(busy)"در حال بررسی..." else "آزمایش اتصال مستقیم")}
   Text(status,style=MaterialTheme.typography.titleMedium)
   if(detail.isNotBlank())Card(Modifier.fillMaxWidth()){Text(detail,Modifier.padding(14.dp))}
   Text("این آزمایش فقط صفحه عمومی را می‌خواند؛ ورود، دورزدن محدودیت یا استخراج محتوای غیرقابل‌دسترسی انجام نمی‌شود.",style=MaterialTheme.typography.bodySmall)
