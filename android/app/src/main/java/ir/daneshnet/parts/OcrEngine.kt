@@ -4,17 +4,19 @@ import android.content.Context
 import android.graphics.Bitmap
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.google.mlkit.vision.text.arabic.ArabicScriptRecognizerOptions
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * On-device Latin-script OCR for part numbers/SKUs. The bundled ML Kit model does not support
- * Persian/Arabic script; the UI must warn users and allow review/correction.
+ * Arabic-script OCR is used because Persian uses the Arabic script.
+ * OCR is a candidate extraction step only; extracted prices must be reviewed.
  */
 class OcrEngine(context: Context) {
-    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val recognizer = TextRecognition.getClient(
+        ArabicScriptRecognizerOptions.Builder().build()
+    )
 
     suspend fun read(bitmap: Bitmap): String = suspendCancellableCoroutine { continuation ->
         recognizer.process(InputImage.fromBitmap(bitmap, 0))
@@ -22,7 +24,6 @@ class OcrEngine(context: Context) {
                 val text = result.text.lines()
                     .map { normalize(it) }
                     .filter { it.isNotBlank() }
-                    .distinct()
                     .joinToString("\n")
                 if (continuation.isActive) continuation.resume(text)
             }
