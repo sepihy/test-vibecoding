@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTeacher, getTeacherSchedule } from "@/lib/data";
+import { days, getTeacher, getTeacherSchedule } from "@/lib/data";
 
 type Props = {
   params: Promise<{ teacherId: string }>;
@@ -13,6 +13,7 @@ export default async function TeacherPage({ params }: Props) {
   if (!teacher) notFound();
 
   const entries = getTeacherSchedule(teacher.id);
+  const dayLabels = new Map(days.map((day) => [day.key, day.label]));
 
   return (
     <main>
@@ -50,7 +51,7 @@ export default async function TeacherPage({ params }: Props) {
               <tbody>
                 {entries.map((entry) => (
                   <tr key={entry.id}>
-                    <td>{entry.day}</td>
+                    <td>{dayLabels.get(entry.day)}</td>
                     <td>{entry.course}</td>
                     <td>{entry.startTime} تا {entry.endTime}</td>
                     <td>{entry.classNo}</td>
