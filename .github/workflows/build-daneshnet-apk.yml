@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - daneshnet-apk-v1
+      - mvp-scaffold
   pull_request:
     branches:
       - mvp-scaffold
