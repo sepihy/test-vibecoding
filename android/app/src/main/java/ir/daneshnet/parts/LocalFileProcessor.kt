@@ -86,19 +86,28 @@ class LocalFileProcessor(private val resolver: ContentResolver) {
         val sheet = entries["xl/worksheets/sheet1.xml"]
             ?: return LocalImportResult(name, "XLSX", "", warnings=listOf("برگه اول فایل Excel پیدا نشد یا فایل ساختار پشتیبانی‌شده ندارد."))
         val stringsXml = entries["xl/sharedStrings.xml"].orEmpty()
-        val shared = Regex("(?s)<si\\b[^>]*>(.*?)</si>").findAll(stringsXml).map { match ->
-            Regex("(?s)<t\\b[^>]*>(.*?)</t>").findAll(match.groupValues[1]).joinToString("") { xmlDecode(it.groupValues[1]) }
+        val sharedItemRegex = Regex("(?s)<si\\b[^>]*>(.*?)</si>")
+        val sharedTextRegex = Regex("(?s)<t\\b[^>]*>(.*?)</t>")
+        val shared = sharedItemRegex.findAll(stringsXml).map { match ->
+            sharedTextRegex.findAll(match.groupValues[1]).joinToString("") { xmlDecode(it.groupValues[1]) }
         }.toList()
+        val rowRegex = Regex("(?s)<row\\b[^>]*>(.*?)</row>")
+        val cellRegex = Regex("(?s)<c\\b([^>]*)>(.*?)</c>")
+        val refRegex = Regex("r=\\"([A-Z]+)[0-9]+\\"")
+        val valueRegex = Regex("(?s)<v>(.*?)</v>")
+        val inlineTextRegex = Regex("(?s)<t[^>]*>(.*?)</t>")
+        val sharedTypeRegex = Regex("t=\\"s\\"")
         val rows = mutableListOf<MutableMap<Int, String>>()
-        Regex("(?s)<row\\b[^>]*>(.*?)</row>").findAll(sheet).forEach { rowMatch ->
+        // Keep imports responsive on large supplier price books.
+        rowRegex.findAll(sheet).take(1000).forEach { rowMatch ->
             val row = mutableMapOf<Int, String>()
-            Regex("(?s)<c\\b([^>]*)>(.*?)</c>").findAll(rowMatch.groupValues[1]).forEach { cellMatch ->
+            cellRegex.findAll(rowMatch.groupValues[1]).forEach cellLoop@ { cellMatch ->
                 val attrs = cellMatch.groupValues[1]; val body = cellMatch.groupValues[2]
-                val ref = Regex("r=\"([A-Z]+)[0-9]+\"").find(attrs)?.groupValues?.get(1) ?: return@forEach
+                val ref = refRegex.find(attrs)?.groupValues?.get(1) ?: return@cellLoop
                 val col = ref.fold(0) { acc, c -> acc * 26 + (c - 'A' + 1) } - 1
-                val raw = Regex("(?s)<v>(.*?)</v>").find(body)?.groupValues?.get(1)
-                    ?: Regex("(?s)<t[^>]*>(.*?)</t>").find(body)?.groupValues?.get(1).orEmpty()
-                val value = if (Regex("t=\"s\"").containsMatchIn(attrs)) shared.getOrNull(raw.toIntOrNull() ?: -1).orEmpty() else xmlDecode(raw)
+                val raw = valueRegex.find(body)?.groupValues?.get(1)
+                    ?: inlineTextRegex.find(body)?.groupValues?.get(1).orEmpty()
+                val value = if (sharedTypeRegex.containsMatchIn(attrs)) shared.getOrNull(raw.toIntOrNull() ?: -1).orEmpty() else xmlDecode(raw)
                 row[col] = value
             }
             if (row.isNotEmpty()) rows += row
@@ -110,6 +119,7 @@ class LocalFileProcessor(private val resolver: ContentResolver) {
         val warnings = mutableListOf<String>()
         if (!header.contains("قیمت") && !header.contains("price", true) && !header.contains("فی")) warnings += "ستون قیمت به‌طور خودکار پیدا نشد؛ سرستون‌ها را بررسی کن."
         if (!header.contains("قطعه") && !header.contains("شرح") && !header.contains("نام") && !header.contains("description", true)) warnings += "ستون نام/شرح قطعه به‌طور خودکار پیدا نشد."
+        if (rows.size >= 1000) warnings += "برای سرعت، فقط ۱۰۰۰ ردیف اول پردازش شد؛ فایل بزرگ‌تر را به چند بخش تقسیم کن."
         return LocalImportResult(name, "XLSX", rendered.joinToString("\n"), (rows.size - 1).coerceAtLeast(0), warnings)
     }
 
