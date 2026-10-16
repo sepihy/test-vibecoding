@@ -93,10 +93,10 @@ class LocalFileProcessor(private val resolver: ContentResolver) {
         }.toList()
         val rowRegex = Regex("(?s)<row\\b[^>]*>(.*?)</row>")
         val cellRegex = Regex("(?s)<c\\b([^>]*)>(.*?)</c>")
-        val refRegex = Regex("r=\\"([A-Z]+)[0-9]+\\"")
+        val refRegex = Regex("r=\"([A-Z]+)[0-9]+\"")
         val valueRegex = Regex("(?s)<v>(.*?)</v>")
         val inlineTextRegex = Regex("(?s)<t[^>]*>(.*?)</t>")
-        val sharedTypeRegex = Regex("t=\\"s\\"")
+        val sharedTypeRegex = Regex("t=\"s\"")
         val rows = mutableListOf<MutableMap<Int, String>>()
         // Keep imports responsive on large supplier price books.
         rowRegex.findAll(sheet).take(1000).forEach { rowMatch ->
