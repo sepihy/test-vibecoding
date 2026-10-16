@@ -137,15 +137,11 @@ fun AppHome() {
             else "جستجوی «$query» ثبت شد؛ دریافت قیمت زنده هنوز به فید واقعی و قابل‌دسترسی منبع نیاز دارد. هیچ قیمت ساختگی نمایش داده نمی‌شود."
         }, modifier = Modifier.fillMaxWidth()) { Text("جستجوی قیمت روز") }
 
-        OutlinedButton(onClick = { mediaPicker.launch(arrayOf("image/*", "application/pdf")) }, modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = { mediaPicker.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth()) {
             Text("افزودن PDF یا عکس")
         }
         OutlinedButton(onClick = {
-            tablePicker.launch(arrayOf(
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "application/vnd.ms-excel", "text/csv", "text/comma-separated-values", "text/plain",
-                "application/octet-stream"
-            ))
+            tablePicker.launch(arrayOf("*/*"))
         }, modifier = Modifier.fillMaxWidth()) { Text("وارد کردن Excel / CSV") }
 
         if (selectedFile.isNotBlank()) {
