@@ -1,0 +1,3 @@
+# test-vibecoding
+
+MVP scaffold.
