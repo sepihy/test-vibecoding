@@ -123,51 +123,6 @@ fun AppHome() {
         }
     }
 
-    val pdfToExcelPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
-            val name = displayName(uri)
-            selectedFile = name
-            busy = true
-            report = "در حال استخراج PDF و آماده‌سازی Excel..."
-            scope.launch {
-                try {
-                    val rows = withContext(Dispatchers.IO) {
-                        val pages = DocumentReader(context.contentResolver).pages(uri, 20)
-                        if (pages.isEmpty()) error("صفحه‌ای از PDF خوانده نشد.")
-                        val ocr = OcrEngine(context)
-                        try {
-                            val outputRows = mutableListOf<List<String>>()
-                            outputRows += listOf("صفحه", "ردیف", "متن استخراج‌شده")
-                            pages.forEachIndexed { pageIndex, bitmap ->
-                                try {
-                                    val text = ocr.read(bitmap)
-                                    text.lines().map { it.trim() }.filter { it.isNotBlank() }.forEachIndexed { lineIndex, line ->
-                                        // Keep original line intact. Also split obvious table delimiters into extra cells.
-                                        val cells = when {
-                                            line.contains("|") -> line.split("|").map { it.trim() }
-                                            line.contains("\\t") -> line.split("\\t").map { it.trim() }
-                                            Regex("\\s{2,}").containsMatchIn(line) -> Regex("\\s{2,}").split(line).map { it.trim() }
-                                            else -> listOf(line)
-                                        }
-                                        outputRows += listOf((pageIndex + 1).toString(), (lineIndex + 1).toString(), line) + cells
-                                    }
-                                } finally { bitmap.recycle() }
-                            }
-                            outputRows
-                        } finally { ocr.close() }
-                    }
-                    pendingExportRows = rows
-                    extractedText = rows.drop(1).take(120).joinToString("\\n") { it.drop(2).joinToString(" | ") }
-                    fileWarnings = "خروجی Excel شامل متن OCR و ستون‌های احتمالی جدول است. متن اصلی هر خط حفظ می‌شود؛ قیمت‌ها و ستون‌ها را با PDF تطبیق بده."
-                    report = "استخراج تمام شد: ${(rows.size - 1).coerceAtLeast(0)} خط. اکنون محل ذخیره فایل Excel را انتخاب کن."
-                    saveXlsxLauncher.launch((name.substringBeforeLast('.', name).ifBlank { "pdf-export" } + ".xlsx"))
-                } catch (e: Exception) {
-                    report = "تبدیل PDF ناموفق بود: ${e.message ?: e.javaClass.simpleName}"
-                } finally { busy = false }
-            }
-        }
-    }
-
     val saveXlsxLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     ) { uri ->
@@ -185,6 +140,51 @@ fun AppHome() {
             }
         } else {
             report = "ذخیره فایل لغو شد؛ برای خروجی گرفتن، تبدیل PDF به Excel را دوباره اجرا کن."
+        }
+    }
+
+    val pdfToExcelPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val name = displayName(uri)
+            selectedFile = name
+            busy = true
+            report = "در حال استخراج PDF و آماده‌سازی Excel..."
+            scope.launch {
+                try {
+                    val rows = withContext(Dispatchers.IO) {
+                        val pages = DocumentReader(context.contentResolver).pages(uri, 5)
+                        if (pages.isEmpty()) error("صفحه‌ای از PDF خوانده نشد.")
+                        val ocr = OcrEngine(context)
+                        try {
+                            val outputRows = mutableListOf<List<String>>()
+                            outputRows += listOf("صفحه", "ردیف", "متن استخراج‌شده")
+                            pages.forEachIndexed { pageIndex, bitmap ->
+                                try {
+                                    val text = ocr.read(bitmap)
+                                    text.lines().map { it.trim() }.filter { it.isNotBlank() }.forEachIndexed { lineIndex, line ->
+                                        // Keep original line intact. Also split obvious table delimiters into extra cells.
+                                        val cells = when {
+                                            line.contains("|") -> line.split("|").map { it.trim() }
+                                            line.contains("\t") -> line.split("\t").map { it.trim() }
+                                            Regex("\\s{2,}").containsMatchIn(line) -> Regex("\\s{2,}").split(line).map { it.trim() }
+                                            else -> listOf(line)
+                                        }
+                                        outputRows += listOf((pageIndex + 1).toString(), (lineIndex + 1).toString(), line) + cells
+                                    }
+                                } finally { bitmap.recycle() }
+                            }
+                            outputRows
+                        } finally { ocr.close() }
+                    }
+                    pendingExportRows = rows
+                    extractedText = rows.drop(1).take(120).joinToString("\n") { it.drop(2).joinToString(" | ") }
+                    fileWarnings = "خروجی Excel شامل متن OCR و ستون‌های احتمالی جدول است. فقط ۵ صفحه اول پردازش شده؛ متن اصلی هر خط حفظ می‌شود و قیمت‌ها باید با PDF تطبیق داده شوند."
+                    report = "استخراج ۵ صفحه اول انجام شد: ${(rows.size - 1).coerceAtLeast(0)} خط. اکنون محل ذخیره فایل Excel را انتخاب کن."
+                    saveXlsxLauncher.launch((name.substringBeforeLast('.', name).ifBlank { "pdf-export" } + ".xlsx"))
+                } catch (e: Exception) {
+                    report = "تبدیل PDF ناموفق بود: ${e.message ?: e.javaClass.simpleName}"
+                } finally { busy = false }
+            }
         }
     }
 
