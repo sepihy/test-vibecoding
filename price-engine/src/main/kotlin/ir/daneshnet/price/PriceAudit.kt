@@ -10,15 +10,14 @@ data class PriceAudit(
 )
 
 object PriceAuditBuilder {
-    fun build(result: AccuratePriceResult): PriceAudit {
-        val accepted = result.sources.map { it.priceRial }.toSet()
-        val all = result.sources.map { it.priceRial }.toSet()
+    fun build(result: AccuratePriceResult, allObservedPricesRial: List<Long> = result.sources.map { it.priceRial }): PriceAudit {
+        val accepted = result.snapshot.validPricesRial.toSet()
         return PriceAudit(
             result.snapshot.part.canonicalKey,
             if (result.accuracy.canShowPrice) result.snapshot.medianRial else null,
             result.accuracy.confidence,
             result.sources.map { it.sourceId }.distinct(),
-            all.filter { it !in accepted }.toList(),
+            allObservedPricesRial.filter { it !in accepted }.distinct(),
             result.accuracy.reasons
         )
     }
