@@ -1,6 +1,8 @@
 name: Android APK
 
 on:
+  push:
+    branches: [spare-parts-price-engine-mvp]
   workflow_dispatch:
 
 jobs:
