@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -171,14 +172,21 @@ private fun HomePage(modifier: Modifier, total: Int, score: Int, completed: Int,
         Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("سلام، ذهن کنجکاو! 👋", fontSize=25.sp, fontWeight=FontWeight.Bold, color=Navy)
-                Text("هر روز یک قدم به هوش‌تر شو", fontSize=15.sp, color=Muted)
+                Text("هر روز یک قدم باهوش‌تر شو", fontSize=15.sp, color=Muted)
                 Text("✦ خرد · حماسه · ایران ✦", fontSize=13.sp, color=Teal, fontWeight=FontWeight.SemiBold)
             }
-            Text("🪶", fontSize=34.sp)
+            Box(Modifier.size(76.dp).clip(CircleShape).background(Gold), contentAlignment=Alignment.Center) {
+                Column(horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.spacedBy((-3).dp)) {
+                    Text("🪶", fontSize=30.sp)
+                    Text("سیمرغ", fontSize=10.sp, color=Navy, fontWeight=FontWeight.Bold)
+                }
+            }
         }
         Box(Modifier.fillMaxWidth().height(245.dp).clip(RoundedCornerShape(28.dp))) {
             Image(safeImagePainter(R.drawable.hero_persian), null, Modifier.fillMaxSize(), contentScale=ContentScale.Crop)
             Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Navy.copy(alpha=.08f), Navy.copy(alpha=.92f)))))
+            // Blend the artwork's flat lower band into the card instead of exposing the gray strip.
+            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Navy.copy(alpha=.88f), Navy.copy(alpha=.96f)))))
             Column(Modifier.align(Alignment.CenterEnd).fillMaxWidth(.72f).padding(18.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) {
                 Text("رازهای شاهنامه", color=Gold, fontWeight=FontWeight.Bold, fontSize=15.sp)
                 Text("آماده‌ای، پهلوان؟", color=Color.White, fontWeight=FontWeight.Bold, fontSize=27.sp)
@@ -189,7 +197,7 @@ private fun HomePage(modifier: Modifier, total: Int, score: Int, completed: Int,
             }
         }
         Row(horizontalArrangement=Arrangement.spacedBy(12.dp), modifier=Modifier.fillMaxWidth()) {
-            StatCard("مراحل بازی", total.toString(), "🧩", Mint, Modifier.weight(1f))
+            StatCard("معماها", total.toString(), "🧩", Mint, Modifier.weight(1f))
             StatCard("امتیاز من", score.toString(), "⭐", PaleGold, Modifier.weight(1f))
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically) {
@@ -246,7 +254,10 @@ private fun LevelsPage(modifier:Modifier, puzzles:List<Puzzle>, completed:Set<St
             items(puzzles.filter { filter==null || it.category==filter }) { p ->
                 Card(modifier=Modifier.fillMaxWidth().clickable { onPick(p) }, colors=CardDefaults.cardColors(containerColor=Color.White), shape=RoundedCornerShape(18.dp), elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
                     Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                        Image(safeImagePainter(artId(LocalContext.current,p.imageName)), null, Modifier.size(width=88.dp,height=68.dp).clip(RoundedCornerShape(12.dp)), contentScale=ContentScale.Crop)
+                        Box(Modifier.size(width=88.dp,height=68.dp).clip(RoundedCornerShape(12.dp))) {
+                            Image(safeImagePainter(artId(LocalContext.current,p.imageName)), null, Modifier.fillMaxSize(), contentScale=ContentScale.Crop)
+                            Box(Modifier.fillMaxWidth().fillMaxHeight(.65f).align(Alignment.BottomCenter).background(Brush.verticalGradient(listOf(Color.Transparent, Navy.copy(alpha=.94f)))))
+                        }
                         Column(Modifier.weight(1f), verticalArrangement=Arrangement.spacedBy(4.dp)) {
                             Text("مرحلهٔ "+p.id.toString()+" · "+p.category, color=Teal, fontSize=12.sp, fontWeight=FontWeight.SemiBold)
                             Text(p.question, color=Navy, fontSize=14.sp, fontWeight=FontWeight.Medium, maxLines=2)
@@ -277,7 +288,10 @@ private fun PlayPage(modifier:Modifier, puzzle:Puzzle, index:Int, total:Int, cho
         }
         Card(colors=CardDefaults.cardColors(containerColor=Color.White), shape=RoundedCornerShape(24.dp), elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) {
-                Image(safeImagePainter(artId(context,puzzle.imageName)), null, Modifier.fillMaxWidth().height(175.dp).clip(RoundedCornerShape(18.dp)), contentScale=ContentScale.Crop)
+                Box(Modifier.fillMaxWidth().height(175.dp).clip(RoundedCornerShape(18.dp))) {
+                    Image(safeImagePainter(artId(context,puzzle.imageName)), null, Modifier.fillMaxSize(), contentScale=ContentScale.Crop)
+                    Box(Modifier.fillMaxWidth().fillMaxHeight(.58f).align(Alignment.BottomCenter).background(Brush.verticalGradient(listOf(Color.Transparent, Navy.copy(alpha=.92f)))))
+                }
                 Text("✦  معمای امروز  ✦", color=Color(0xFFC64F61), fontWeight=FontWeight.Bold)
                 Text(puzzle.question, color=Navy, fontWeight=FontWeight.Bold, fontSize=21.sp, textAlign=TextAlign.Start)
                 puzzle.options.forEachIndexed { i, option ->
