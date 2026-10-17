@@ -29,7 +29,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.android.gms.ads.MobileAds
 import org.json.JSONArray
 
 private val Cream = Color(0xFFFFF8EE)
@@ -56,7 +55,6 @@ class MainActivity : ComponentActivity() {
         window.statusBarColor = android.graphics.Color.rgb(255,248,238)
         window.navigationBarColor = android.graphics.Color.WHITE
         window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        MobileAds.initialize(this) {}
         setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 GanjnamehApp()
