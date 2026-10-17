@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.ui.draw.border
+import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.FilterQuality
@@ -209,7 +209,7 @@ private enum class HeritageRegion { King, Tower, Lamp, Book, Numbers }
 
 @Composable
 private fun HeritageArt(region: HeritageRegion, modifier: Modifier = Modifier) {
-    val bitmap = androidx.compose.runtime.remember { ImageBitmap.imageResource(R.drawable.heritage_collage) }
+    val bitmap = ImageBitmap.imageResource(R.drawable.heritage_collage)
     val source = when (region) {
         HeritageRegion.King -> Pair(IntOffset(0, 0), IntSize(99, 111))
         HeritageRegion.Tower -> Pair(IntOffset(100, 0), IntSize(100, 111))
