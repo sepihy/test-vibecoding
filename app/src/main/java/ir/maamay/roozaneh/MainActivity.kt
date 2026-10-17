@@ -1,349 +1,243 @@
 package ir.maamay.roozaneh
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.imageResource
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
-import kotlin.math.roundToInt
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.ads.MobileAds
+import org.json.JSONArray
 
-private val ivory = Color(0xFFFFF8ED)
-private val lapis = Color(0xFF183B68)
-private val lapisLight = Color(0xFF315F91)
-private val turquoise = Color(0xFF168F91)
-private val saffron = Color(0xFFF2BC55)
-private val pomegranate = Color(0xFFC74752)
-private val ink = Color(0xFF1F2C45)
-private val muted = Color(0xFF748094)
-private val paleTurquoise = Color(0xFFDDF2EC)
-private val paleGold = Color(0xFFFFEFCB)
-private val paleRose = Color(0xFFFBE4E3)
-private val paleBlue = Color(0xFFE4EAF5)
+private val Cream = Color(0xFFFFF8EE)
+private val Navy = Color(0xFF173B66)
+private val Teal = Color(0xFF238F8D)
+private val Gold = Color(0xFFF4BE4F)
+private val Ink = Color(0xFF17304B)
+private val Mint = Color(0xFFDDF2E8)
+private val PaleGold = Color(0xFFFFEFCB)
+private val Rose = Color(0xFFFBE4E7)
+private val Lavender = Color(0xFFE8E4F3)
+private val Muted = Color(0xFF7F8994)
 
-data class Puzzle(val category: String, val question: String, val options: List<String>, val answer: Int, val explanation: String)
-
-private val base = listOf(
-    Puzzle("عدد", "عدد بعدی چیست؟ ۲، ۴، ۶، ۸، ؟", listOf("۹", "۱۰", "۱۲", "۱۴"), 1, "هر بار ۲ واحد اضافه می‌شود."),
-    Puzzle("منطق", "در مسابقه از نفر دوم سبقت می‌گیری. حالا چندمی؟", listOf("اول", "دوم", "سوم", "چهارم"), 1, "جای نفر دوم را می‌گیری، پس دوم می‌شوی."),
-    Puzzle("کلمه", "کدام مورد متفاوت است؟", listOf("قرمز", "آبی", "سبز", "هفت"), 3, "سه گزینه رنگ‌اند؛ هفت یک عدد است."),
-    Puzzle("منطق", "دو پدر و دو پسر سه سیب دارند؛ هر نفر یک سیب می‌گیرد. چند نفرند؟", listOf("۲", "۳", "۴", "۵"), 1, "سه نفرند: پدربزرگ، پدر و پسر."),
-    Puzzle("عدد", "۵ + ۳ × ۲ چند می‌شود؟", listOf("۱۶", "۱۱", "۱۳", "۱۰"), 1, "ابتدا ضرب: ۵ + ۶ = ۱۱."),
-    Puzzle("کلمه", "کدام یک جانور نیست؟", listOf("گنجشک", "لاک‌پشت", "پروانه", "کاج"), 3, "کاج یک درخت است."),
-    Puzzle("منطق", "اگر امروز دوشنبه باشد، سه روز بعد چه روزی است؟", listOf("چهارشنبه", "پنجشنبه", "جمعه", "شنبه"), 1, "سه روز بعد پنجشنبه است."),
-    Puzzle("عدد", "نصف ۱۸ به‌علاوه ۲ چند است؟", listOf("۹", "۱۱", "۲۰", "۷"), 1, "۹ + ۲ = ۱۱."),
-    Puzzle("کلمه", "کدام مورد وسیله نقلیه نیست؟", listOf("قطار", "دوچرخه", "هواپیما", "پنجره"), 3, "پنجره وسیله نقلیه نیست."),
-    Puzzle("منطق", "مریم از سارا بلندتر و سارا از ندا بلندتر است. کوتاه‌ترین کیست؟", listOf("مریم", "سارا", "ندا", "مشخص نیست"), 2, "ندا کوتاه‌ترین است.")
+private data class Puzzle(
+    val id: Int, val category: String, val difficulty: String, val question: String,
+    val options: List<String>, val answerIndex: Int, val explanation: String,
+    val imageName: String, val chapter: String, val hint: String, val reward: Int
 )
-private val puzzles = (1..100).map { base[(it - 1) % base.size] }
 
 class MainActivity : ComponentActivity() {
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { App() }
+        window.statusBarColor = android.graphics.Color.rgb(255,248,238)
+        window.navigationBarColor = android.graphics.Color.WHITE
+        window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        MobileAds.initialize(this) {}
+        setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                GanjnamehApp()
+            }
+        }
     }
 }
 
 @Composable
-private fun App() {
+private fun GanjnamehApp() {
+    val context = LocalContext.current
+    val puzzles = remember { loadPuzzles(context) }
+    val prefs = remember { context.getSharedPreferences("ganjnameh_progress", Context.MODE_PRIVATE) }
     var page by remember { mutableStateOf("home") }
-    var idx by remember { mutableIntStateOf(0) }
-    var picked by remember { mutableIntStateOf(-1) }
-    var score by remember { mutableIntStateOf(0) }
-    var hint by remember { mutableStateOf(false) }
+    var selected by remember { mutableIntStateOf((prefs.getInt("last_stage_id", 1)-1).coerceIn(0, (puzzles.size-1).coerceAtLeast(0)) }
+    var chosen by remember { mutableIntStateOf(-1) }
+    var score by remember { mutableIntStateOf(prefs.getInt("score", 0)) }
+    var completed by remember { mutableStateOf(prefs.getStringSet("completed_ids", emptySet<String>())?.toSet() ?: emptySet()) }
+    var hintShown by remember { mutableStateOf(false) }
+    var categoryFilter by remember { mutableStateOf<String?>(null) }
+    val current = puzzles.getOrNull(selected)
 
-    MaterialTheme(
-        colorScheme = lightColorScheme(
-            primary = lapis, secondary = turquoise, tertiary = saffron,
-            background = ivory, surface = Color.White, onBackground = ink, onSurface = ink
-        )
-    ) {
+    MaterialTheme(colorScheme = lightColorScheme(primary=Navy, secondary=Teal, tertiary=Gold, background= Cream, surface=Color.White, onSurface=Ink, onBackground=Ink)) {
         Scaffold(
-            containerColor = ivory,
+            containerColor = Cream,
             bottomBar = {
-                NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
-                    NavigationBarItem(page == "home", { page = "home" }, icon = { Text("🏛️", fontSize = 20.sp) }, label = { Text("خانه") })
-                    NavigationBarItem(page == "levels" || page == "play", { page = "levels" }, icon = { Text("🧩", fontSize = 20.sp) }, label = { Text("مراحل") })
-                    NavigationBarItem(page == "profile", { page = "profile" }, icon = { Text("🏆", fontSize = 20.sp) }, label = { Text("پیشرفت") })
+                NavigationBar(containerColor=Color.White, tonalElevation=0.dp) {
+                    NavigationBarItem(selected=page=="home", onClick={page="home"}, icon={Text("🏛️")}, label={Text("خانه")})
+                    NavigationBarItem(selected=page=="levels" || page=="play", onClick={page="levels"}, icon={Text("🧩")}, label={Text("مراحل")})
+                    NavigationBarItem(selected=page=="profile", onClick={page="profile"}, icon={Text("🏆")}, label={Text("پیشرفت")})
                 }
             }
         ) { pad ->
-            when (page) {
-                "home" -> Home(pad, score, { idx = 0; picked = -1; hint = false; page = "play" }, { page = "levels" })
-                "play" -> Play(pad, puzzles[idx], idx, picked, score, hint,
-                    { n -> if (picked == -1) { picked = n; if (n == puzzles[idx].answer) score += 10 } },
-                    { hint = true },
-                    { idx = (idx + 1) % puzzles.size; picked = -1; hint = false }
+            when(page) {
+                "home" -> HomePage(
+                    modifier=Modifier.padding(pad), total=puzzles.size, score=score, completed=completed.size,
+                    onStart={ selected=(prefs.getInt("last_stage_id",1)-1).coerceIn(0,(puzzles.size-1).coerceAtLeast(0)); chosen=-1; hintShown=false; page="play" },
+                    onLevels={categoryFilter=null;page="levels"},
+                    onCategory={ categoryFilter=it; page="levels" }
                 )
-                "levels" -> Levels(pad) { idx = it; picked = -1; hint = false; page = "play" }
-                else -> Profile(pad, score, idx)
+                "levels" -> LevelsPage(
+                    modifier=Modifier.padding(pad), puzzles=puzzles, completed=completed, filter=categoryFilter,
+                    onFilterClear={categoryFilter=null},
+                    onPick={ p -> selected=p.id-1; chosen=-1; hintShown=false; prefs.edit().putInt("last_stage_id",p.id).apply(); page="play" }
+                )
+                "play" -> if(current!=null) PlayPage(
+                    modifier=Modifier.padding(pad), puzzle=current, index=selected, total=puzzles.size,
+                    chosen=chosen, hintShown=hintShown,
+                    onChoose={ option ->
+                        if(chosen==-1) {
+                            chosen=option
+                            if(option==current.answerIndex) {
+                                score += current.reward
+                                completed = completed + current.id.toString()
+                                prefs.edit().putInt("score",score).putStringSet("completed_ids",completed).putInt("last_stage_id",current.id).apply()
+                            }
+                        }
+                    },
+                    onHint={hintShown=true},
+                    onNext={
+                        if(selected < puzzles.lastIndex) selected += 1 else page="home"
+                        chosen=-1; hintShown=false
+                        prefs.edit().putInt("last_stage_id",selected+1).apply()
+                    },
+                    onLevels={page="levels"}
+                )
+                else -> ProfilePage(Modifier.padding(pad), score, completed.size, puzzles.size, onLevels={page="levels"}, onHome={page="home"})
             }
         }
     }
 }
 
-@Composable
-private fun Home(pad: PaddingValues, score: Int, start: () -> Unit, all: () -> Unit) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(pad).padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 12.dp, bottom = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("سلام، ذهن کنجکاو! 👋", fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
-                    Text("هر روز یک قدم باهوش‌تر شو", fontSize = 14.sp, color = muted)
-                    Text("✦  خرد • حماسه • ایران  ✦", fontSize = 11.sp, color = turquoise, fontWeight = FontWeight.Bold)
-                }
-                Box(Modifier.padding(start = 10.dp).size(72.dp).clip(CircleShape).border(2.dp, saffron, CircleShape)) {
-                    Image(
-                        painter = painterResource(R.drawable.hero_persian),
-                        contentDescription = "سیمرغ",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        alignment = Alignment.CenterStart
-                    )
-                }
-            }
-        }
-        item {
-            Box(Modifier.fillMaxWidth().height(232.dp).clip(RoundedCornerShape(26.dp))) {
-                Image(
-                    painter = painterResource(R.drawable.hero_persian),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds
-                )
-                Box(
-                    Modifier.fillMaxSize().background(
-                        Brush.horizontalGradient(listOf(Color.Transparent, Color(0x33102D54), Color(0xAA102D54)))
-                    )
-                )
-                Column(
-                    Modifier.align(Alignment.CenterEnd).fillMaxWidth(0.62f).padding(horizontal = 15.dp, vertical = 12.dp),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(9.dp)
-                ) {
-                    Surface(color = Color(0xCC315F91), shape = RoundedCornerShape(16.dp)) {
-                        Text("✦  چالش امروز  ✦", modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Text("آماده‌ای ذهنت رو قلقلک بدی؟", fontSize = 21.sp, lineHeight = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, textAlign = TextAlign.End)
-                    Text("۱۰۰ مرحله سرگرم‌کننده", fontSize = 13.sp, color = Color.White.copy(alpha = 0.94f), fontWeight = FontWeight.SemiBold)
-                    Button(
-                        onClick = start,
-                        colors = ButtonDefaults.buttonColors(containerColor = saffron, contentColor = lapis),
-                        shape = RoundedCornerShape(18.dp),
-                        contentPadding = PaddingValues(horizontal = 17.dp, vertical = 9.dp)
-                    ) {
-                        Text("←  شروع معما", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                HeritageStatCard("معماها", "۱۰۰", HeritageRegion.King, paleTurquoise, Modifier.weight(1f))
-                HeritageStatCard("امتیاز", score.toString().map { ch -> if (ch in '0'..'9') ('۰'.code + (ch - '0')).toChar() else ch }.joinToString(""), HeritageRegion.Tower, paleGold, Modifier.weight(1f))
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("✦  ❈  ✦", fontSize = 15.sp, color = saffron)
-                Text("دسته‌بندی‌ها", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                CategoryCard(HeritageRegion.Numbers, "عدد", paleBlue, lapis, Modifier.weight(1f), all)
-                CategoryCard(HeritageRegion.Book, "کلمه", paleRose, pomegranate, Modifier.weight(1f), all)
-                CategoryCard(HeritageRegion.Lamp, "منطق", paleTurquoise, turquoise, Modifier.weight(1f), all)
-            }
-        }
-        item {
-            Text(
-                "رایگان بازی کن؛ راهنمایی و تبلیغات اختیاری در نسخه بعد اضافه می‌شوند.",
-                fontSize = 11.sp,
-                color = muted,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
-            Image(
-                painter = painterResource(R.drawable.hero_persian),
-                contentDescription = "منظره‌ای الهام‌گرفته از ایران کهن",
-                modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(16.dp)),
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.BottomCenter
-            )
-        }
-    }
-}
-
-private enum class HeritageRegion { King, Tower, Lamp, Book, Numbers }
-
-@Composable
-private fun HeritageArt(region: HeritageRegion, modifier: Modifier = Modifier) {
-    val bitmap = ImageBitmap.imageResource(R.drawable.heritage_collage)
-    val source = when (region) {
-        HeritageRegion.King -> Pair(IntOffset(0, 0), IntSize(99, 111))
-        HeritageRegion.Tower -> Pair(IntOffset(100, 0), IntSize(100, 111))
-        HeritageRegion.Lamp -> Pair(IntOffset(0, 112), IntSize(65, 87))
-        HeritageRegion.Book -> Pair(IntOffset(66, 112), IntSize(67, 87))
-        HeritageRegion.Numbers -> Pair(IntOffset(134, 112), IntSize(66, 87))
-    }
-    Canvas(modifier) {
-        drawImage(
-            image = bitmap,
-            srcOffset = source.first,
-            srcSize = source.second,
-            dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
-            filterQuality = FilterQuality.Medium
+private fun loadPuzzles(context: Context): List<Puzzle> = runCatching {
+    val array = JSONArray(context.assets.open("puzzles.json").bufferedReader().use { it.readText() })
+    (0 until array.length()).map { i ->
+        val o=array.getJSONObject(i); val opts=o.getJSONArray("options")
+        Puzzle(
+            id=o.getInt("id"), category=o.getString("category"), difficulty=o.getString("difficulty"),
+            question=o.getString("question"), options=(0 until opts.length()).map { opts.getString(it) },
+            answerIndex=o.getInt("answerIndex"), explanation=o.getString("explanation"),
+            imageName=o.optString("image","stage_%03d".format(o.getInt("id"))),
+            chapter=o.optString("chapter","سفر به سرزمین رازها"),
+            hint=o.optString("hint","به سرنخ‌ها دقت کن."), reward=o.optInt("reward",10)
         )
     }
+}.getOrDefault(emptyList())
+
+private fun artId(context: Context, name: String): Int {
+    val id=context.resources.getIdentifier(name,"drawable",context.packageName)
+    return if(id!=0) id else R.drawable.heritage_collage
 }
 
 @Composable
-private fun HeritageStatCard(label: String, value: String, region: HeritageRegion, tint: Color, modifier: Modifier) {
-    Card(
-        modifier = modifier.height(112.dp),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = tint),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            Modifier.fillMaxSize().padding(7.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f).padding(start = 3.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.End) {
-                Text(label, color = ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                Text(value, color = lapis, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+private fun HomePage(modifier: Modifier, total: Int, score: Int, completed: Int, onStart:()->Unit, onLevels:()->Unit, onCategory:(String)->Unit) {
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=16.dp, vertical=14.dp), verticalArrangement=Arrangement.spacedBy(16.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment=Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("سلام، ذهن کنجکاو! 👋", fontSize=25.sp, fontWeight=FontWeight.Bold, color=Navy)
+                Text("هر روز یک قدم به هوش‌تر شو", fontSize=15.sp, color=Muted)
+                Text("✦ خرد · حماسه · ایران ✦", fontSize=13.sp, color=Teal, fontWeight=FontWeight.SemiBold)
             }
-            HeritageArt(region, Modifier.width(74.dp).fillMaxHeight().clip(RoundedCornerShape(15.dp)))
+            Text("🪶", fontSize=34.sp)
         }
-    }
-}
-
-@Composable
-private fun StatCard(label: String, value: String, emblem: String, backgroundColor: Color, accent: Color, modifier: Modifier) {
-    Card(modifier = modifier, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = backgroundColor), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
-        Row(Modifier.fillMaxWidth().padding(15.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(label, color = ink, fontSize = 12.sp)
-                Text(value, color = lapis, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
-            }
-            Text(emblem, color = accent, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
-        }
-    }
-}
-
-@Composable
-private fun CategoryCard(region: HeritageRegion, title: String, tint: Color, accent: Color, modifier: Modifier, click: () -> Unit) {
-    Card(
-        onClick = click,
-        modifier = modifier.height(132.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = tint),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-            Modifier.fillMaxSize().padding(horizontal = 5.dp, vertical = 5.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            HeritageArt(region, Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(14.dp)))
-            Text(title, color = lapis, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 4.dp))
-        }
-    }
-}
-
-@Composable
-private fun Play(pad: PaddingValues, p: Puzzle, idx: Int, picked: Int, score: Int, hint: Boolean, choose: (Int) -> Unit, showHint: () -> Unit, next: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(pad).padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("آزمون پهلوانی", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
-                Text("❈  معمای ${idx + 1} از ۱۰۰  ❈", fontSize = 12.sp, color = turquoise)
-            }
-            Surface(shape = RoundedCornerShape(14.dp), color = paleGold) {
-                Text("★  $score", modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), color = lapis, fontWeight = FontWeight.Bold)
-            }
-        }
-        LinearProgressIndicator(progress = { (idx + 1) / 100f }, modifier = Modifier.fillMaxWidth().height(7.dp), color = turquoise, trackColor = paleTurquoise)
-        Surface(shape = RoundedCornerShape(12.dp), color = paleBlue) {
-            Text("دسته: ${p.category}   •   خرد و دانایی", modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp), color = lapis, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-        }
-        Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                Text("✦  معمای امروز  ✦", color = pomegranate, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Text(p.question, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = lapis, lineHeight = 30.sp)
-                p.options.forEachIndexed { n, opt ->
-                    val bg = when {
-                        picked == -1 -> ivory
-                        n == p.answer -> paleTurquoise
-                        n == picked -> paleRose
-                        else -> Color(0xFFF4F5F8)
-                    }
-                    Button(onClick = { choose(n) }, enabled = picked == -1, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = bg, contentColor = ink, disabledContainerColor = bg, disabledContentColor = ink)) {
-                        Text("${listOf("الف", "ب", "پ", "ت")[n]}.  $opt", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start, fontSize = 15.sp)
-                    }
+        Box(Modifier.fillMaxWidth().height(245.dp).clip(RoundedCornerShape(28.dp))) {
+            Image(painterResource(R.drawable.hero_persian), null, Modifier.fillMaxSize(), contentScale=ContentScale.Crop)
+            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Navy.copy(alpha=.08f), Navy.copy(alpha=.92f)))))
+            Column(Modifier.align(Alignment.CenterEnd).fillMaxWidth(.72f).padding(18.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                Text("رازهای شاهنامه", color=Gold, fontWeight=FontWeight.Bold, fontSize=15.sp)
+                Text("آماده‌ای، پهلوان؟", color=Color.White, fontWeight=FontWeight.Bold, fontSize=27.sp)
+                Text("هوشت را بیازمای و گنج دانایی را پیدا کن.", color=Color.White, fontSize=14.sp)
+                Button(onClick=onStart, colors=ButtonDefaults.buttonColors(containerColor=Gold, contentColor=Navy), shape=RoundedCornerShape(18.dp)) {
+                    Text("شروع معما  ←", fontWeight=FontWeight.Bold)
                 }
-                if (picked != -1) {
-                    Text(if (picked == p.answer) "آفرین، پهلوان! پاسخ درست بود 🎉" else "اشکالی ندارد؛ از هر معما چیزی یاد می‌گیری 🌱", fontWeight = FontWeight.Bold, color = if (picked == p.answer) turquoise else pomegranate)
-                    Text(p.explanation, color = ink, fontSize = 14.sp, lineHeight = 22.sp)
-                }
-                if (hint) Text("راهنمایی: ${p.explanation}", color = turquoise, fontSize = 13.sp, lineHeight = 20.sp)
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = showHint, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) { Text("💡 راهنمایی") }
-            Button(onClick = next, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = lapis)) { Text("معمای بعدی  ←") }
+        Row(horizontalArrangement=Arrangement.spacedBy(12.dp), modifier=Modifier.fillMaxWidth()) {
+            StatCard("مراحل بازی", total.toString(), "🧩", Mint, Modifier.weight(1f))
+            StatCard("امتیاز من", score.toString(), "⭐", PaleGold, Modifier.weight(1f))
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically) {
+            Text("دسته‌های چالش", fontSize=20.sp, fontWeight=FontWeight.Bold, color=Navy)
+            Text("همهٔ مراحل ←", color=Teal, modifier=Modifier.clickable { onLevels() })
+        }
+        Row(horizontalArrangement=Arrangement.spacedBy(10.dp), modifier=Modifier.fillMaxWidth()) {
+            CategoryCard("منطق","💡",Mint,Modifier.weight(1f)){onCategory("منطق")}
+            CategoryCard("کلمه","📖",Rose,Modifier.weight(1f)){onCategory("کلمه")}
+            CategoryCard("عدد","🔢",Lavender,Modifier.weight(1f)){onCategory("عدد")}
+            CategoryCard("فرهنگ","🏛️",PaleGold,Modifier.weight(1f)){onCategory("فرهنگ")}
+        }
+        Card(colors=CardDefaults.cardColors(containerColor=Color.White), shape=RoundedCornerShape(20.dp)) {
+            Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                Text("🏺", fontSize=30.sp)
+                Column(Modifier.weight(1f)) {
+                    Text("سفری در ایران کهن", fontWeight=FontWeight.Bold, color=Navy)
+                    Text("از باغ‌های ایرانی تا رازهای شاهنامه", fontSize=13.sp, color=Muted)
+                }
+                Text("✦", color=Gold, fontSize=24.sp)
+            }
+        }
+        Text("بازی رایگان است؛ راهنمایی‌های اختیاری در نسخه‌های بعدی اضافه می‌شوند.", color=Muted, fontSize=12.sp, textAlign=TextAlign.Center, modifier=Modifier.fillMaxWidth().padding(bottom=8.dp))
+    }
+}
+
+@Composable
+private fun StatCard(title:String, value:String, icon:String, tint:Color, modifier:Modifier=Modifier) {
+    Card(modifier, colors=CardDefaults.cardColors(containerColor=tint), shape=RoundedCornerShape(22.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement=Arrangement.spacedBy(5.dp)) {
+            Text(icon+"  "+title, color=Navy, fontSize=14.sp)
+            Text(value, color=Navy, fontWeight=FontWeight.Bold, fontSize=27.sp)
         }
     }
 }
 
 @Composable
-private fun Levels(pad: PaddingValues, pick: (Int) -> Unit) {
-    LazyColumn(Modifier.fillMaxSize().padding(pad).padding(horizontal = 16.dp), contentPadding = PaddingValues(top = 18.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        item {
-            Text("گنجینه‌ی معماها", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
-            Text("هر مرحله، یک گام به سوی خرد", fontSize = 13.sp, color = muted)
+private fun CategoryCard(title:String, emoji:String, tint:Color, modifier:Modifier=Modifier, onClick:()->Unit) {
+    Card(modifier.clickable(onClick=onClick), colors=CardDefaults.cardColors(containerColor=tint), shape=RoundedCornerShape(18.dp)) {
+        Column(Modifier.fillMaxWidth().padding(vertical=14.dp, horizontal=4.dp), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.spacedBy(6.dp)) {
+            Text(emoji, fontSize=25.sp)
+            Text(title, color=Navy, fontWeight=FontWeight.SemiBold, fontSize=13.sp)
         }
-        itemsIndexed(puzzles) { i, p ->
-            Card(onClick = { pick(i) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
-                Row(Modifier.fillMaxWidth().padding(13.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                    Box(Modifier.size(39.dp).background(paleGold, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Text("${i + 1}", color = lapis, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp) }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(p.question, color = ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 19.sp, maxLines = 2)
-                        Text("دسته: ${p.category}", color = turquoise, fontSize = 11.sp)
+    }
+}
+
+@Composable
+private fun LevelsPage(modifier:Modifier, puzzles:List<Puzzle>, completed:Set<String>, filter:String?, onFilterClear:()->Unit, onPick:(Puzzle)->Unit) {
+    Column(modifier.fillMaxSize().padding(horizontal=14.dp, vertical=10.dp)) {
+        Text("نقشهٔ سفر", fontSize=26.sp, fontWeight=FontWeight.Bold, color=Navy, modifier=Modifier.padding(vertical=8.dp))
+        Text(if(filter==null) "۱۰۰ مرحله در ۱۰ فصل" else "دسته: "+filter, color=Teal, modifier=Modifier.padding(bottom=8.dp))
+        if(filter!=null) OutlinedButton(onClick=onFilterClear, modifier=Modifier.fillMaxWidth()) { Text("نمایش همهٔ مراحل") }
+        LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp), contentPadding=PaddingValues(bottom=12.dp)) {
+            items(puzzles.filter { filter==null || it.category==filter }) { p ->
+                Card(modifier=Modifier.fillMaxWidth().clickable { onPick(p) }, colors=CardDefaults.cardColors(containerColor=Color.White), shape=RoundedCornerShape(18.dp), elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                        Image(painterResource(artId(LocalContext.current,p.imageName)), null, Modifier.size(width=88.dp,height=68.dp).clip(RoundedCornerShape(12.dp)), contentScale=ContentScale.Crop)
+                        Column(Modifier.weight(1f), verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                            Text("مرحلهٔ "+p.id.toString()+" · "+p.category, color=Teal, fontSize=12.sp, fontWeight=FontWeight.SemiBold)
+                            Text(p.question, color=Navy, fontSize=14.sp, fontWeight=FontWeight.Medium, maxLines=2)
+                            Text(p.chapter+" · "+p.difficulty, color=Muted, fontSize=11.sp)
+                        }
+                        Text(if(completed.contains(p.id.toString())) "✓" else "›", color=if(completed.contains(p.id.toString())) Teal else Gold, fontSize=25.sp, fontWeight=FontWeight.Bold)
                     }
-                    Text("‹", fontSize = 25.sp, color = pomegranate)
                 }
             }
         }
@@ -351,22 +245,66 @@ private fun Levels(pad: PaddingValues, pick: (Int) -> Unit) {
 }
 
 @Composable
-private fun Profile(pad: PaddingValues, score: Int, idx: Int) {
-    Column(Modifier.fillMaxSize().padding(pad).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("دفتر افتخار من", fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
-        Text("ردّ پای پیشرفتت در سرزمین معماها", fontSize = 13.sp, color = muted)
-        Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(lapis, lapisLight)), RoundedCornerShape(24.dp)).padding(22.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("🏆", fontSize = 42.sp)
-                Text("پهلوان خرد", fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                Text("هر پاسخ، یک نشان افتخار", fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
-                Text("✦  ❈  ✦  ❈  ✦", fontSize = 15.sp, color = saffron)
+private fun PlayPage(modifier:Modifier, puzzle:Puzzle, index:Int, total:Int, chosen:Int, hintShown:Boolean, onChoose:(Int)->Unit, onHint:()->Unit, onNext:()->Unit, onLevels:()->Unit) {
+    val context=LocalContext.current
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=16.dp, vertical=12.dp), verticalArrangement=Arrangement.spacedBy(13.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween, verticalAlignment=Alignment.CenterVertically) {
+            Column {
+                Text("آزمون پهلوانی", fontSize=24.sp, fontWeight=FontWeight.Bold, color=Navy)
+                Text("معمای "+puzzle.id.toString()+" از "+total.toString(), color=Teal, fontSize=14.sp)
+            }
+            Surface(color=PaleGold, shape=RoundedCornerShape(14.dp)) { Text("⭐ "+puzzle.reward.toString(), Modifier.padding(horizontal=12.dp, vertical=8.dp), color=Navy, fontWeight=FontWeight.Bold) }
+        }
+        LinearProgressIndicator(progress={ (index+1).toFloat()/total.coerceAtLeast(1) }, modifier=Modifier.fillMaxWidth().height(7.dp).clip(RoundedCornerShape(8.dp)), color=Teal, trackColor=Mint)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.End) {
+            Surface(color=Lavender, shape=RoundedCornerShape(14.dp)) { Text("دسته: "+puzzle.category+"  ·  "+puzzle.difficulty, Modifier.padding(horizontal=12.dp, vertical=9.dp), color=Navy, fontWeight=FontWeight.SemiBold, fontSize=13.sp) }
+        }
+        Card(colors=CardDefaults.cardColors(containerColor=Color.White), shape=RoundedCornerShape(24.dp), elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) {
+                Image(painterResource(artId(context,puzzle.imageName)), null, Modifier.fillMaxWidth().height(175.dp).clip(RoundedCornerShape(18.dp)), contentScale=ContentScale.Crop)
+                Text("✦  معمای امروز  ✦", color=Color(0xFFC64F61), fontWeight=FontWeight.Bold)
+                Text(puzzle.question, color=Navy, fontWeight=FontWeight.Bold, fontSize=21.sp, textAlign=TextAlign.Start)
+                puzzle.options.forEachIndexed { i, option ->
+                    val correct = chosen!=-1 && i==puzzle.answerIndex
+                    val wrong = chosen==i && i!=puzzle.answerIndex
+                    val tint = when { correct -> Mint; wrong -> Rose; else -> Cream }
+                    Surface(modifier=Modifier.fillMaxWidth().clickable(enabled=chosen==-1){onChoose(i)}, color=tint, shape=RoundedCornerShape(15.dp), border=if(correct) androidx.compose.foundation.BorderStroke(1.dp,Teal) else null) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal=14.dp, vertical=14.dp), verticalAlignment=Alignment.CenterVertically) {
+                            Text(listOf("الف","ب","ج","د")[i]+"  ·  "+option, color=Navy, fontSize=17.sp, fontWeight=if(correct) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                }
+                if(chosen!=-1) {
+                    Text(if(chosen==puzzle.answerIndex) "آفرین! پاسخ درست است." else "این بار نشد؛ پاسخ درست را ببین و ادامه بده.", color=if(chosen==puzzle.answerIndex) Teal else Color(0xFFC64F61), fontWeight=FontWeight.Bold, fontSize=17.sp)
+                    Text(puzzle.explanation, color=Ink, fontSize=14.sp)
+                }
+                if(hintShown) Text("💡 "+puzzle.hint, color=Teal, fontSize=14.sp)
             }
         }
-        StatCard("امتیاز به‌دست‌آمده", score.toString(), "★", paleGold, saffron, Modifier.fillMaxWidth())
-        StatCard("آخرین مرحله", "${idx + 1} از ۱۰۰", "❖", paleTurquoise, turquoise, Modifier.fillMaxWidth())
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-            Text("نسخه آزمایشی: ذخیره آنلاین و حساب کاربری در مرحله بعد اضافه می‌شود.", modifier = Modifier.fillMaxWidth().padding(16.dp), color = muted, fontSize = 12.sp, lineHeight = 19.sp)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+            OutlinedButton(onClick=onHint, modifier=Modifier.weight(1f)) { Text("💡 راهنمایی") }
+            Button(onClick=if(chosen==-1) onLevels else onNext, modifier=Modifier.weight(1f), colors=ButtonDefaults.buttonColors(containerColor=Navy)) {
+                Text(if(chosen==-1) "فهرست مراحل" else if(index==total-1) "پایان سفر ←" else "معمای بعدی ←")
+            }
         }
+    }
+}
+
+@Composable
+private fun ProfilePage(modifier:Modifier, score:Int, completed:Int, total:Int, onLevels:()->Unit, onHome:()->Unit) {
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement=Arrangement.spacedBy(16.dp)) {
+        Text("پیشرفت من", fontSize=27.sp, fontWeight=FontWeight.Bold, color=Navy)
+        Card(colors=CardDefaults.cardColors(containerColor=Color.White), shape=RoundedCornerShape(24.dp)) {
+            Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement=Arrangement.spacedBy(12.dp), horizontalAlignment=Alignment.CenterHorizontally) {
+                Text("🏆", fontSize=48.sp)
+                Text("پهلوان خرد", fontSize=23.sp, fontWeight=FontWeight.Bold, color=Navy)
+                Text("امتیاز: "+score.toString(), color=Teal, fontSize=18.sp, fontWeight=FontWeight.Bold)
+                Text("مراحل تکمیل‌شده: "+completed.toString()+" از "+total.toString(), color=Muted)
+                LinearProgressIndicator(progress={ completed.toFloat()/total.coerceAtLeast(1) }, modifier=Modifier.fillMaxWidth().height(8.dp), color=Teal, trackColor=Mint)
+            }
+        }
+        Button(onClick=onLevels, modifier=Modifier.fillMaxWidth()) { Text("ادامهٔ سفر") }
+        OutlinedButton(onClick=onHome, modifier=Modifier.fillMaxWidth()) { Text("بازگشت به خانه") }
+        Text("پیشرفت روی همین دستگاه ذخیره می‌شود. همگام‌سازی آنلاین در مرحلهٔ بعدی توسعه تکمیل می‌شود.", color=Muted, fontSize=12.sp)
     }
 }
