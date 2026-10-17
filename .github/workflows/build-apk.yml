@@ -3,11 +3,12 @@ on:
   workflow_dispatch:
   push:
     branches: [ maamay-roozaneh-apk ]
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 20
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
     steps:
@@ -23,12 +24,12 @@ jobs:
         shell: bash
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          ls -la "$ANDROID_HOME"
-          find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -name sdkmanager -type f
+          find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f
       - name: Accept Android SDK licenses
         shell: bash
         run: |
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)"
+          test -n "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses || true
       - name: Install Android SDK packages
         shell: bash
@@ -36,7 +37,9 @@ jobs:
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)"
           "$SDKMANAGER" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
+        run: gradle --no-daemon --stacktrace --info assembleDebug
+      - name: Verify APK exists
+        run: test -s app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: maamay-roozaneh-debug-apk
