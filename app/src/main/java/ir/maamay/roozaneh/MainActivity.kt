@@ -146,7 +146,9 @@ private fun loadPuzzles(context: Context): List<Puzzle> = runCatching {
 
 private fun artId(context: Context, name: String): Int {
     val id=context.resources.getIdentifier(name,"drawable",context.packageName)
-    return if(id!=0) id else R.drawable.heritage_collage
+    if (id != 0) return id
+    val stage = name.substringAfterLast('_').toIntOrNull() ?: 1
+    return if (stage % 2 == 0) R.drawable.hero_persian else R.drawable.heritage_collage
 }
 
 @Composable
