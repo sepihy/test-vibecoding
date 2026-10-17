@@ -71,7 +71,7 @@ private fun GanjnamehApp() {
     val puzzles = remember { loadPuzzles(context) }
     val prefs = remember { context.getSharedPreferences("ganjnameh_progress", Context.MODE_PRIVATE) }
     var page by remember { mutableStateOf("home") }
-    var selected by remember { mutableIntStateOf((prefs.getInt("last_stage_id", 1)-1).coerceIn(0, (puzzles.size-1).coerceAtLeast(0)) }
+    var selected by remember { mutableIntStateOf((prefs.getInt("last_stage_id", 1)-1).coerceIn(0, (puzzles.size-1).coerceAtLeast(0))) }
     var chosen by remember { mutableIntStateOf(-1) }
     var score by remember { mutableIntStateOf(prefs.getInt("score", 0)) }
     var completed by remember { mutableStateOf(prefs.getStringSet("completed_ids", emptySet<String>())?.toSet() ?: emptySet()) }
