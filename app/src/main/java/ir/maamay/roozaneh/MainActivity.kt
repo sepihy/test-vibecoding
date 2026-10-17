@@ -4,6 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -97,82 +109,143 @@ private fun App() {
 @Composable
 private fun Home(pad: PaddingValues, score: Int, start: () -> Unit, all: () -> Unit) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(pad).padding(horizontal = 18.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(17.dp)
+        modifier = Modifier.fillMaxSize().padding(pad).padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(top = 12.dp, bottom = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("درود، کاوشگر! 👋", fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
-                    Text("به سرزمین معماها خوش آمدی", fontSize = 14.sp, color = muted)
-                    Text("✦  خرد • حماسه • ایران  ✦", fontSize = 11.sp, color = turquoise, fontWeight = FontWeight.SemiBold)
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("سلام، ذهن کنجکاو! 👋", fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
+                    Text("هر روز یک قدم باهوش‌تر شو", fontSize = 14.sp, color = muted)
+                    Text("✦  خرد • حماسه • ایران  ✦", fontSize = 11.sp, color = turquoise, fontWeight = FontWeight.Bold)
                 }
-                Box(Modifier.size(62.dp).background(Brush.linearGradient(listOf(saffron, Color(0xFFFFD987))), CircleShape), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Text("🪶", fontSize = 25.sp)
-                        Text("سیمرغ", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = lapis)
+                Box(Modifier.padding(start = 10.dp).size(72.dp).clip(CircleShape).border(2.dp, saffron, CircleShape)) {
+                    Image(
+                        painter = painterResource(R.drawable.hero_persian),
+                        contentDescription = "سیمرغ",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        alignment = Alignment.CenterStart
+                    )
+                }
+            }
+        }
+        item {
+            Box(Modifier.fillMaxWidth().height(232.dp).clip(RoundedCornerShape(26.dp))) {
+                Image(
+                    painter = painterResource(R.drawable.hero_persian),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
+                )
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.horizontalGradient(listOf(Color.Transparent, Color(0x33102D54), Color(0xAA102D54)))
+                    )
+                )
+                Column(
+                    Modifier.align(Alignment.CenterEnd).fillMaxWidth(0.62f).padding(horizontal = 15.dp, vertical = 12.dp),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    Surface(color = Color(0xCC315F91), shape = RoundedCornerShape(16.dp)) {
+                        Text("✦  چالش امروز  ✦", modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Text("آماده‌ای ذهنت رو قلقلک بدی؟", fontSize = 21.sp, lineHeight = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, textAlign = TextAlign.End)
+                    Text("۱۰۰ مرحله سرگرم‌کننده", fontSize = 13.sp, color = Color.White.copy(alpha = 0.94f), fontWeight = FontWeight.SemiBold)
+                    Button(
+                        onClick = start,
+                        colors = ButtonDefaults.buttonColors(containerColor = saffron, contentColor = lapis),
+                        shape = RoundedCornerShape(18.dp),
+                        contentPadding = PaddingValues(horizontal = 17.dp, vertical = 9.dp)
+                    ) {
+                        Text("←  شروع معما", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                     }
                 }
             }
         }
         item {
-            Column(
-                Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(lapis, Color(0xFF234E7C), lapisLight)), RoundedCornerShape(28.dp)).padding(21.dp),
-                verticalArrangement = Arrangement.spacedBy(11.dp)
-            ) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("❈  رازهای شاهنامه  ❈", color = saffron, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text("چالش امروز", color = Color.White.copy(alpha = 0.88f), fontSize = 12.sp)
-                }
-                Text("آماده‌ای، پهلوان؟", fontSize = 27.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                Text("هوشت را بیازمای و گنج دانایی را پیدا کن.", fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text("۱۰۰ مرحله سرگرم‌کننده", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                        Text("◇  از خرد سیمرغ تا دلاوری رستم  ◇", color = Color(0xFFD6E6F5), fontSize = 10.sp)
-                    }
-                    Box(Modifier.size(52.dp).background(Color.White.copy(alpha = 0.12f), CircleShape), contentAlignment = Alignment.Center) { Text("🦅", fontSize = 28.sp) }
-                }
-                Button(onClick = start, colors = ButtonDefaults.buttonColors(containerColor = saffron, contentColor = lapis), shape = RoundedCornerShape(15.dp), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 11.dp)) {
-                    Text("شروع معما  ←", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
-                }
-                Text("✦  ❈  ✦  ❈  ✦  ❈  ✦", color = Color.White.copy(alpha = 0.42f), fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                HeritageStatCard("معماها", "۱۰۰", HeritageRegion.King, paleTurquoise, Modifier.weight(1f))
+                HeritageStatCard("امتیاز", score.toString().map { ch -> if (ch in '0'..'9') ('۰'.code + (ch - '0')).toChar() else ch }.joinToString(""), HeritageRegion.Tower, paleGold, Modifier.weight(1f))
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                StatCard("امتیاز من", score.toString(), "★", paleGold, saffron, Modifier.weight(1f))
-                StatCard("مراحل بازی", "۱۰۰", "❖", paleTurquoise, turquoise, Modifier.weight(1f))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("✦  ❈  ✦", fontSize = 15.sp, color = saffron)
+                Text("دسته‌بندی‌ها", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
             }
         }
         item {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
-                Row(Modifier.fillMaxWidth().padding(15.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(54.dp).background(paleBlue, RoundedCornerShape(15.dp)), contentAlignment = Alignment.Center) { Text("🏛️", fontSize = 27.sp) }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("سفری در ایران کهن", fontWeight = FontWeight.ExtraBold, color = lapis, fontSize = 15.sp)
-                        Text("از تخت جمشید و نقش رستم تا افسانه‌های شاهنامه", color = muted, fontSize = 11.sp, lineHeight = 16.sp)
-                    }
-                    Text("❈", color = saffron, fontSize = 25.sp)
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                CategoryCard(HeritageRegion.Numbers, "عدد", paleBlue, lapis, Modifier.weight(1f), all)
+                CategoryCard(HeritageRegion.Book, "کلمه", paleRose, pomegranate, Modifier.weight(1f), all)
+                CategoryCard(HeritageRegion.Lamp, "منطق", paleTurquoise, turquoise, Modifier.weight(1f), all)
             }
         }
         item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("دسته‌های چالش", fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = lapis)
-                Text("✦  ❈  ✦", fontSize = 13.sp, color = saffron)
-            }
+            Text(
+                "رایگان بازی کن؛ راهنمایی و تبلیغات اختیاری در نسخه بعد اضافه می‌شوند.",
+                fontSize = 11.sp,
+                color = muted,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
-                CategoryCard("۱۲۳", "عدد", paleBlue, lapis, Modifier.weight(1f), all)
-                CategoryCard("ابجد", "کلمه", paleRose, pomegranate, Modifier.weight(1f), all)
-                CategoryCard("💡", "منطق", paleTurquoise, turquoise, Modifier.weight(1f), all)
-            }
+            Image(
+                painter = painterResource(R.drawable.hero_persian),
+                contentDescription = "منظره‌ای الهام‌گرفته از ایران کهن",
+                modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(16.dp)),
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.BottomCenter
+            )
         }
-        item {
-            Text("با الهام از سیمرغ، رستم و نقش‌مایه‌های هنر ایرانی", fontSize = 11.sp, color = muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+private enum class HeritageRegion { King, Tower, Lamp, Book, Numbers }
+
+@Composable
+private fun HeritageArt(region: HeritageRegion, modifier: Modifier = Modifier) {
+    val bitmap = androidx.compose.runtime.remember { ImageBitmap.imageResource(R.drawable.heritage_collage) }
+    val source = when (region) {
+        HeritageRegion.King -> Pair(IntOffset(0, 0), IntSize(99, 111))
+        HeritageRegion.Tower -> Pair(IntOffset(100, 0), IntSize(100, 111))
+        HeritageRegion.Lamp -> Pair(IntOffset(0, 112), IntSize(65, 87))
+        HeritageRegion.Book -> Pair(IntOffset(66, 112), IntSize(67, 87))
+        HeritageRegion.Numbers -> Pair(IntOffset(134, 112), IntSize(66, 87))
+    }
+    Canvas(modifier) {
+        drawImage(
+            image = bitmap,
+            srcOffset = source.first,
+            srcSize = source.second,
+            dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+            filterQuality = FilterQuality.Medium
+        )
+    }
+}
+
+@Composable
+private fun HeritageStatCard(label: String, value: String, region: HeritageRegion, tint: Color, modifier: Modifier) {
+    Card(
+        modifier = modifier.height(112.dp),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = tint),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            Modifier.fillMaxSize().padding(7.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f).padding(start = 3.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.End) {
+                Text(label, color = ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(value, color = lapis, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+            }
+            HeritageArt(region, Modifier.width(74.dp).fillMaxHeight().clip(RoundedCornerShape(15.dp)))
         }
     }
 }
@@ -191,13 +264,21 @@ private fun StatCard(label: String, value: String, emblem: String, backgroundCol
 }
 
 @Composable
-private fun CategoryCard(icon: String, title: String, tint: Color, accent: Color, modifier: Modifier, click: () -> Unit) {
-    Card(onClick = click, modifier = modifier, shape = RoundedCornerShape(19.dp), colors = CardDefaults.cardColors(containerColor = tint), elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
-        Column(Modifier.fillMaxWidth().padding(vertical = 17.dp, horizontal = 5.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Box(Modifier.size(43.dp).background(Color.White.copy(alpha = 0.72f), CircleShape), contentAlignment = Alignment.Center) {
-                Text(icon, color = accent, fontSize = if (icon.length > 2) 18.sp else 23.sp, fontWeight = FontWeight.Bold)
-            }
-            Text(title, color = lapis, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+private fun CategoryCard(region: HeritageRegion, title: String, tint: Color, accent: Color, modifier: Modifier, click: () -> Unit) {
+    Card(
+        onClick = click,
+        modifier = modifier.height(132.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = tint),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 5.dp, vertical = 5.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            HeritageArt(region, Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(14.dp)))
+            Text(title, color = lapis, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 4.dp))
         }
     }
 }
