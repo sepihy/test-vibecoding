@@ -61,7 +61,7 @@ class MainActivity:ComponentActivity(){ override fun onCreate(savedInstanceState
  item{Text("رایگان بازی کن؛ راهنمایی و تبلیغات اختیاری در نسخه بعد اضافه می‌شوند.",fontSize=12.sp,color=Color.Gray,textAlign=TextAlign.Center)}
  }}
 @Composable private fun Stat(label:String,value:String,c:Color,m:Modifier){Card(m,shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=c.copy(alpha=.22f))){Column(Modifier.padding(16.dp)){Text(label,color=ink);Text(value,fontSize=25.sp,fontWeight=FontWeight.ExtraBold,color=ink)}}}
-@Composable private fun Cat(e:String,t:String,c:Color,m:Modifier,click:()->Unit){Card(m,onClick=click,shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=c.copy(alpha=.13f))){Column(Modifier.fillMaxWidth().padding(vertical=16.dp),horizontalAlignment=Alignment.CenterHorizontally){Text(e,fontSize=24.sp);Text(t,fontWeight=FontWeight.Bold,color=ink)}}}
+@Composable private fun Cat(e:String,t:String,c:Color,m:Modifier,click:()->Unit){Card(onClick=click,modifier=m,shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=c.copy(alpha=.13f))){Column(Modifier.fillMaxWidth().padding(vertical=16.dp),horizontalAlignment=Alignment.CenterHorizontally){Text(e,fontSize=24.sp);Text(t,fontWeight=FontWeight.Bold,color=ink)}}}
 @Composable private fun Play(pad:PaddingValues,p:Puzzle,idx:Int,picked:Int,score:Int,hint:Boolean,choose:(Int)->Unit,showHint:()->Unit,next:()->Unit){
  Column(Modifier.fillMaxSize().padding(pad).padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("🧠 معمای روزانه",fontSize=20.sp,fontWeight=FontWeight.ExtraBold,color=ink);Text("⭐ $score",fontWeight=FontWeight.Bold)}
