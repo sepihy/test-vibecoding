@@ -1,6 +1,7 @@
 package ir.maamay.roozaneh
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,10 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
@@ -142,6 +146,18 @@ private fun loadPuzzles(context: Context): List<Puzzle> = runCatching {
     }
 }.getOrDefault(emptyList())
 
+
+@Composable
+private fun safeImagePainter(resourceId: Int): Painter {
+    val context = LocalContext.current
+    val bitmap = remember(resourceId) {
+        runCatching { BitmapFactory.decodeResource(context.resources, resourceId) }.getOrNull()
+    }
+    return remember(bitmap) {
+        bitmap?.let { BitmapPainter(it.asImageBitmap()) } ?: ColorPainter(Color(0xFF244A73))
+    }
+}
+
 private fun artId(context: Context, name: String): Int {
     val id=context.resources.getIdentifier(name,"drawable",context.packageName)
     if (id != 0) return id
@@ -161,7 +177,7 @@ private fun HomePage(modifier: Modifier, total: Int, score: Int, completed: Int,
             Text("🪶", fontSize=34.sp)
         }
         Box(Modifier.fillMaxWidth().height(245.dp).clip(RoundedCornerShape(28.dp))) {
-            Image(painterResource(R.drawable.hero_persian), null, Modifier.fillMaxSize(), contentScale=ContentScale.Crop)
+            Image(safeImagePainter(R.drawable.hero_persian), null, Modifier.fillMaxSize(), contentScale=ContentScale.Crop)
             Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Navy.copy(alpha=.08f), Navy.copy(alpha=.92f)))))
             Column(Modifier.align(Alignment.CenterEnd).fillMaxWidth(.72f).padding(18.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) {
                 Text("رازهای شاهنامه", color=Gold, fontWeight=FontWeight.Bold, fontSize=15.sp)
@@ -230,7 +246,7 @@ private fun LevelsPage(modifier:Modifier, puzzles:List<Puzzle>, completed:Set<St
             items(puzzles.filter { filter==null || it.category==filter }) { p ->
                 Card(modifier=Modifier.fillMaxWidth().clickable { onPick(p) }, colors=CardDefaults.cardColors(containerColor=Color.White), shape=RoundedCornerShape(18.dp), elevation=CardDefaults.cardElevation(defaultElevation=1.dp)) {
                     Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                        Image(painterResource(artId(LocalContext.current,p.imageName)), null, Modifier.size(width=88.dp,height=68.dp).clip(RoundedCornerShape(12.dp)), contentScale=ContentScale.Crop)
+                        Image(safeImagePainter(artId(LocalContext.current,p.imageName)), null, Modifier.size(width=88.dp,height=68.dp).clip(RoundedCornerShape(12.dp)), contentScale=ContentScale.Crop)
                         Column(Modifier.weight(1f), verticalArrangement=Arrangement.spacedBy(4.dp)) {
                             Text("مرحلهٔ "+p.id.toString()+" · "+p.category, color=Teal, fontSize=12.sp, fontWeight=FontWeight.SemiBold)
                             Text(p.question, color=Navy, fontSize=14.sp, fontWeight=FontWeight.Medium, maxLines=2)
@@ -261,7 +277,7 @@ private fun PlayPage(modifier:Modifier, puzzle:Puzzle, index:Int, total:Int, cho
         }
         Card(colors=CardDefaults.cardColors(containerColor=Color.White), shape=RoundedCornerShape(24.dp), elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) {
-                Image(painterResource(artId(context,puzzle.imageName)), null, Modifier.fillMaxWidth().height(175.dp).clip(RoundedCornerShape(18.dp)), contentScale=ContentScale.Crop)
+                Image(safeImagePainter(artId(context,puzzle.imageName)), null, Modifier.fillMaxWidth().height(175.dp).clip(RoundedCornerShape(18.dp)), contentScale=ContentScale.Crop)
                 Text("✦  معمای امروز  ✦", color=Color(0xFFC64F61), fontWeight=FontWeight.Bold)
                 Text(puzzle.question, color=Navy, fontWeight=FontWeight.Bold, fontSize=21.sp, textAlign=TextAlign.Start)
                 puzzle.options.forEachIndexed { i, option ->
