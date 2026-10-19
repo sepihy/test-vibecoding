@@ -17,7 +17,7 @@ import android.webkit.WebViewClient;
 import java.util.UUID;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://daneshnet24.ir/";
+    private static final String HOME = "https://daneshnet24.ir/wp-ac";
     private static final String PREFS = "daneshnet_app";
     private static final String DEVICE_KEY = "anonymous_device_key";
     private WebView webView;
